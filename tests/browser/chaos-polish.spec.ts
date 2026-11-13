@@ -31,7 +31,7 @@ test('four natural bot sessions end cleanly with bounded objects and no invented
    g.restart(seed);g.pause();g.state='RUNNING';const original=g.input.consume.bind(g.input);let frame=0,maxParts=0,maxPending=0,error:string|null=null;
    g.input.consume=()=>({axis:g.player.current.x>2.8?-1:g.player.current.x<-2.8?1:Math.floor(g.now/3)%2?1:-1,stomp:false,saw:true,pressed:frame%12===0,released:frame%12===1,effortPresses:frame%6===0?1:0,jumpPresses:frame%12===0?1:0});
    try{for(;frame<3600&&(g.state==='RUNNING'||g.state==='DYING');frame++){(g as unknown as {fixedUpdate():void}).fixedUpdate();maxParts=Math.max(maxParts,g.physics.parts.size);maxPending=Math.max(maxPending,g.warnings.length);}}catch(e){error=String(e);}finally{g.input.consume=original;}
-   const s=g.debugSnapshot();reports.push({seed,error,state:s.state,time:s.time,reason:s.result?.lossReason,rows:s.rows,drops:s.drops,events:s.chaos.events,collected:s.sky.collected,broken:s.weapons.broken,maxParts,maxPending,numeric:s.numericFaults,maxSpeed:s.maxSpeed,maxAngular:s.maxAngularSpeed});g.pause();
+   const s=g.debugSnapshot();reports.push({seed,error,state:s.state,time:s.time,reason:s.result?.lossReason,rows:s.rows,drops:s.drops,events:s.chaos.events,collected:s.sky.collected,medical:s.medicalUsed,broken:s.weapons.broken,maxParts,maxPending,numeric:s.numericFaults,maxSpeed:s.maxSpeed,maxAngular:s.maxAngularSpeed});g.pause();
   }return reports;
  });
  console.log(JSON.stringify({sessions:reports}));await testInfo.attach('chaos-sessions.json',{body:JSON.stringify(reports,null,2),contentType:'application/json'});

@@ -257,11 +257,14 @@ export class RetroRenderer {
       if(!g){
         g=new THREE.Group();g.name=`Sky-${item.kind}-${item.id}`;
         const mesh=(geometry:THREE.BufferGeometry,color:string)=>{const m=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color}));m.userData.skyOwned=true;g!.add(m);return m;};
-        if(item.kind==='weapon'){
-          mesh(new THREE.BoxGeometry(.85,.6,.5),'#3c906b');
-          const source=item.weapon==='saw'?this.sawVisual:this.weaponVisuals.get(item.weapon!);
+        if(item.kind==='weapon'||item.kind==='medkit'){
+          mesh(new THREE.BoxGeometry(.85,.6,.5),item.kind==='medkit'?'#d9e1d5':'#3c906b');
+          if(item.kind==='medkit'){
+            const h=mesh(new THREE.BoxGeometry(.5,.12,.03),'#df4539'),v=mesh(new THREE.BoxGeometry(.12,.44,.03),'#df4539');h.position.z=v.position.z=.28;
+          }
+          const source=item.kind==='medkit'?null:item.weapon==='saw'?this.sawVisual:this.weaponVisuals.get(item.weapon!);
           if(source){const weapon=source.clone(true);weapon.visible=true;weapon.scale.setScalar(.38);weapon.position.set(-.28,0,.4);g.add(weapon);}
-          const ring=mesh(new THREE.RingGeometry(.55,.62,16),'#a6ffc4');ring.position.z=.5;ring.name='SupplyHalo';ring.material.depthTest=false;ring.material.depthWrite=false;ring.renderOrder=30;
+          const ring=mesh(new THREE.RingGeometry(.55,.62,16),item.kind==='medkit'?'#fff0cf':'#a6ffc4');ring.position.z=.5;ring.name='SupplyHalo';ring.material.depthTest=false;ring.material.depthWrite=false;ring.renderOrder=30;
         }else if(item.kind==='saw'){
           const disk=mesh(new THREE.CylinderGeometry(.48,.48,.12,16),'#c5d2d4');disk.rotation.x=Math.PI/2;
           for(let i=0;i<12;i++){const tooth=mesh(new THREE.ConeGeometry(.08,.2,3),'#faf3cc');const a=i/12*Math.PI*2;tooth.position.set(Math.sin(a)*.49,Math.cos(a)*.49,0);tooth.rotation.z=-a;}
@@ -271,7 +274,7 @@ export class RetroRenderer {
         }else{mesh(new THREE.BoxGeometry(.85,.7,.55),'#927652');const stripe=mesh(new THREE.BoxGeometry(.9,.1,.57),'#e6c36c');stripe.rotation.z=.6;}
         this.scene.add(g);this.skyVisuals.set(item.id,g);
       }
-      g.position.set(item.position.x,item.position.y,.35);g.rotation.z=item.kind==='weapon'?Math.sin(item.spin)*.12:item.spin;
+      g.position.set(item.position.x,item.position.y,.35);g.rotation.z=item.kind==='weapon'||item.kind==='medkit'?Math.sin(item.spin)*.12:item.spin;
       const halo=g.getObjectByName('SupplyHalo');if(halo)halo.scale.setScalar(1+.1*Math.sin(item.spin*3));
     }
   }

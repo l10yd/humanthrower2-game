@@ -17,6 +17,10 @@ export class PlayerSurvival {
   for(const [id,until]of this.recent)if(until<now)this.recent.delete(id);
   return true;
  }
+ medkit(){
+  if(!this.damage?.alive||this.air<=0)return false;
+  this.damage.heal(.25);this.air=Math.min(CONFIG.survival.airSeconds,this.air+2);return true;
+ }
  breathe(now:number,buried:boolean):'IMPACT'|'SUFFOCATION'|null {
   const dt=this.lastTime===null?0:Math.max(0,Math.min(.25,now-this.lastTime));this.lastTime=now;
   if(buried)this.loadedSince??=now;else this.loadedSince=null;

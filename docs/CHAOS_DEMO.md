@@ -1,5 +1,15 @@
 # Chaos demo / 16-row cup
 
+## Medical / hazard pass (chaos-v4)
+
+- White medical drops with a red cross appear at simulation time 18 s, then every 22 s, independently of the weapon/event RNG. Proximity consumes each once. Restore up to 25 percentage points of bruised retained-tissue durability and 2 s air; never regrow limbs or resurrect. Pause/death do not collect them.
+- Circular saw/scrap contacts use the contacted ragdoll limb or nearest upright anatomical template instead of always chest. Head immunity and post-rise protection apply before knockdown/damage.
+- Bomb player distance is measured to live collider surfaces, including a prone body; direct fresh wall ray tests occlude damage even before query BVH initialization. NPC piles are not treated as solid walls.
+- Safe pickups ignore the player as a landing obstacle, preventing floating supplies attached to an uncollected standing capsule.
+- Default HUD shows points, time, rows, combo, body strength, air and drops; danger tint below 30%/2 s. `?debug` restores physics diagnostics and test buttons. Result includes events and medical pickups.
+- Build + demo gate pass: **18 unit/physics and 9 browser tests**. Seven extra mobile/shader/impact browser checks pass. Four natural sessions finish ~13/28/20/56 s without errors, collect 0/1/1/2 medkits and clear rows in two sessions. No claim that the simple bot measures human balance or solver stability.
+- Full unit suite **394/396 passed**; the same known angular gate and asset CLI timeout remain. Isolated asset CLI rerun **4/4 passed**.
+
 ## Polish pass (chaos-v3)
 
 - First supply is a saw; an independent seeded shuffle bag cycles through all usable kinds before repeats. Arm loss restricts future supplies to head weapons. Manual new-session controls choose a new crypto seed; `restart(seed)` remains reproducible.

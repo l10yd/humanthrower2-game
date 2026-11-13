@@ -18,6 +18,15 @@ export class PlayerDamage {
   if(this.parts[limb]<1e-6)this.parts[limb]=0;
   return amount;
  }
+ heal(amount:number){
+  if(!this.alive||!Number.isFinite(amount)||amount<=0)return 0;
+  let restored=0;
+  for(const limb of BODY_PARTS){
+   if(!this.has(limb))continue;
+   const before=this.parts[limb];this.parts[limb]=Math.max(before,Math.min(this.tissue[limb],before+amount));restored+=this.parts[limb]-before;
+  }
+  return restored;
+ }
  retain(limb:BodyPart,amount:number){
   if(limb==='head'&&this.headImmune)return;
   const retained=Math.max(0,Math.min(this.tissue[limb],amount));
