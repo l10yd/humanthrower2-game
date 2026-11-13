@@ -1,0 +1,29 @@
+{
+  "name": "humanthrower",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "balance:measure": "playwright test --config playwright.balance.config.ts",
+    "balance:bot": "node scripts/balance-sessions.mjs",
+    "validate:asset": "node scripts/validate-character.mjs",
+    "test": "vitest run",
+    "test:demo": "vitest run tests/physics/chaos-demo.test.ts && playwright test tests/browser/chaos-demo.spec.ts",
+    "test:browser": "playwright test",
+    "check": "npm run test && npm run build"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "0.21.0",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.58.2",
+    "@types/node": "22.19.1",
+    "@types/three": "0.183.1",
+    "typescript": "5.9.3",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}

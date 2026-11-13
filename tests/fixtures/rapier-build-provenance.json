@@ -1,0 +1,22 @@
+{
+  "package": "@dimforge/rapier3d-compat",
+  "jsVersion": "0.21.0",
+  "nativeVersion": "0.36.0",
+  "repository": "https://github.com/dimforge/rapier",
+  "commit": "b716d375efc0201003f0cd9ef7168eee0b62c177",
+  "tag": "js-v0.21.0",
+  "workflow": ".github/workflows/typescript-bindings.yml",
+  "buildRun": "https://github.com/dimforge/rapier/actions/runs/36112107426/attempts/1",
+  "attestationsUrl": "https://registry.npmjs.org/-/npm/v1/attestations/@dimforge%2frapier3d-compat@0.21.0",
+  "tarballIntegrity": "sha512-tCl1HPGwOhn5aCQbgqWbOH+Nx/5fnr3IPAnzQuR7zIhC/raqi2yxC6LhvZqjdI2El5hQgY5RDAwDrAjAi2FdPA==",
+  "wasmSize": 3082103,
+  "wasmSha256": "17cfa80eebd8de0291b948496dbffba724b98b489687f8272ca236a7bbf1dd4b",
+  "sourceHashes": {
+    ".github/workflows/typescript-bindings.yml": "5f5528e1a17b6499989ecd7a224acca1b2261bdf59257d2cd0007b838a67f280",
+    "bindings/typescript/builds/prepare_builds/templates/Cargo.toml.tera": "26ebefaea4c0f711d9bda66e4c72dcf4c81d9ca419f469ae30555af371e07e13",
+    "src/dynamics/solver/joint_constraint/joint_constraint_helper.rs": "a7ee6680a61bdabaf915b1ae557da190485c7c19ce5de3a6585f8a0033cb22b7",
+    "src/dynamics/solver/joint_constraint/joint_constraint_builder.rs": "5d9a6bdf472458f4315e5d6c099d3a4e6015c08edebfebdaf958b7cca0a22219",
+    "src/dynamics/integration_parameters.rs": "85780cd4252c2d6f7b780cb1e7a5646492f09a5b2e2827736d027a8b3fee4c2c"
+  },
+  "verificationScope": "npm audit signatures --json --include-attestations passed: package listed under verified, invalid/missing empty. Registry SLSA payload resolves exact commit; lockfile integrity and installed external/embedded WASM equality checked. Verification performed by npm tooling; no native rebuild or bit-identical rebuild is claimed."
+}
