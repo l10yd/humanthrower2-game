@@ -1,3 +1,9 @@
+/* Results and records stay in overlay flow, never resize the arena. */
+#record-board[hidden],#run-details[hidden],#replay-run[hidden]{display:none}
+#record-board{width:min(560px,100%);padding:12px;border:1px solid #4f6456;background:#16231bc9;text-align:left;font-size:12px;margin:8px 0}#record-board strong{color:#d8c798}#record-board ol{padding-left:28px;margin:8px 0;line-height:1.8}#record-board p{margin:5px 0;font-size:11px}
+#run-details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:min(650px,100%);text-align:left;margin:12px 0}#run-details>div{padding:10px;border:1px solid #465e4d;background:#122019dc}#run-details small{font-size:10px;margin:0;color:#94ab98}#run-details strong{display:block;font-size:19px;color:#ead9ad;margin-top:5px}#run-details .run-tip,#run-details>small{grid-column:1/-1;line-height:1.5}#run-details .run-tip{color:#d9cbb0;margin:5px 0}#replay-run{margin-top:8px;min-width:230px}
+#app[data-state="TITLE"] #overlay{justify-content:flex-start}#app[data-state="TITLE"] #overlay h1{margin-top:12px}
+@media(max-width:600px){#run-details{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}#run-details>div{padding:7px}#run-details strong{font-size:16px}}
 /* Death presentation follows simulation state, including pause/resume. */
 #scene{transition:filter .35s ease}
 #app[data-state="DYING"] #scene,#app[data-state="PAUSED"][data-dying="true"] #scene,#app[data-state="GAME_OVER"] #scene{filter:blur(2px) saturate(.55)}

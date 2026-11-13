@@ -19,7 +19,7 @@ export class FreshDropMotion {
   this.drops=this.drops.filter(drop=>{
    const parts=drop.ids.map(id=>this.physics.parts.get(id)).filter((p):p is Part=>!!p),ids=new Set(parts.map(p=>p.id));let landed=false;
    for(const p of parts){p.body.resetTorques(false);}
-   for(const p of parts)this.physics.world.contactPairsWith(p.collider,c=>{if(ids.has(this.physics.partForCollider(c)?.id??-1))return;const contact=p.collider.contactCollider(c,.02);if(contact&&contact.distance<=.02)landed=true;});
+   for(const p of parts)this.physics.world.contactPairsWith(p.collider,c=>{if(this.physics.isPlayerCeiling(c)||ids.has(this.physics.partForCollider(c)?.id??-1))return;const contact=p.collider.contactCollider(c,.02);if(contact&&contact.distance<=.02)landed=true;});
    if(!parts.length||landed||now-drop.born>5){this.passive(ids);return false;}
    const raw=this.physics.world.impulseJoints.raw;
    for(const j of this.physics.joints.values()){

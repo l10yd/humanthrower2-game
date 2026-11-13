@@ -4,6 +4,7 @@ export const PLAYER_SCALE = 2;
 export const CONFIG = {
   dt: 1 / 60,
   arena: { width: 9, height: 16, depth: 2.4, wall: 0.35, critical: 14.5 },
+  entry:{clearance:1.2,height:8,timeout:6,fallSpeed:4},
   player: { radius: 0.48, halfHeight: 0.67, speed: 7.6, acceleration: 56, brake: 68,
     airAcceleration: 28, gravity: 36, jumpSpeed: 12.4, coyote: 0.24, buffer: 0.28,
     mass: 64, height: 2.3, ragdollWidth: 1.12, impactSpeed: 5, stunTime: 0.225,

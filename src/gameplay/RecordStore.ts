@@ -14,7 +14,9 @@ const valid=(r:unknown):r is SessionRecord=>{
     &&typeof x.durationSeconds==='number'&&Number.isFinite(x.durationSeconds)&&x.durationSeconds>=0&&x.durationSeconds<=1e7
     &&typeof x.maxCombo==='number'&&Number.isFinite(x.maxCombo)&&x.maxCombo>=1&&x.maxCombo<=3;
 };
+export const compareRecords=(a:SessionRecord,b:SessionRecord)=>b.score-a.score||b.rows-a.rows||b.durationSeconds-a.durationSeconds;
 export class RecordStore {
+  private degraded=new Set<string>();
   private memory=new Map<string,SessionRecord[]>();unavailable=false;
   constructor(private storage:StorageLike|null){}
   private key(record:Pick<SessionRecord,'rulesVersion'|'profile'|'arenaPreset'|'assisted'>){
@@ -22,14 +24,14 @@ export class RecordStore {
   }
   list(profile:Pick<SessionRecord,'rulesVersion'|'profile'|'arenaPreset'|'assisted'>):SessionRecord[]{
     const key=this.key(profile);let data:unknown=this.memory.get(key)??[];
-    try{const raw=this.storage?.getItem(key);if(raw)data=JSON.parse(raw);}catch{this.unavailable=true;}
-    const records=(Array.isArray(data)?data:[]).filter(valid).filter(r=>this.key(r)===key).sort((a,b)=>b.score-a.score||b.rows-a.rows).slice(0,10);
+    try{if(!this.degraded.has(key)){const raw=this.storage?.getItem(key);if(raw)data=JSON.parse(raw);}}catch{this.unavailable=true;this.degraded.add(key);}
+    const records=(Array.isArray(data)?data:[]).filter(valid).filter(r=>this.key(r)===key).sort(compareRecords).slice(0,10);
     this.memory.set(key,records);return records.map(r=>({...r}));
   }
   save(record:SessionRecord):SessionRecord[]{
-    if(!valid(record))throw Error('Invalid session record');const key=this.key(record),records=[...this.list(record),{...record}].sort((a,b)=>b.score-a.score||b.rows-a.rows).slice(0,10);
+    if(!valid(record))throw Error('Invalid session record');const key=this.key(record),records=[...this.list(record),{...record}].sort(compareRecords).slice(0,10);
     this.memory.set(key,records);
-    try{if(!this.storage)throw Error('Storage unavailable');this.storage.setItem(key,JSON.stringify(records));}catch{this.unavailable=true;}
+    try{if(!this.storage)throw Error('Storage unavailable');this.storage.setItem(key,JSON.stringify(records));}catch{this.unavailable=true;this.degraded.add(key);}
     return records.map(r=>({...r}));
   }
 }

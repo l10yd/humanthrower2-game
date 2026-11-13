@@ -28,6 +28,10 @@ export interface Joint {
   connector?:ConnectorVolume;frameA?:Quat;frameB?:Quat;
 }
 export class PhysicsManager {
+  private ceilingHandle:number|null=null;
+  private incoming=new Map<number,{expires:number;entered:boolean}>();
+  isPlayerCeiling(collider:RAPIER.Collider){return collider.handle===this.ceilingHandle;}
+  registerIncoming(parts:readonly Part[]){for(const part of parts)this.incoming.set(part.id,{expires:this.time+CONFIG.entry.timeout,entered:false});}
   impacts=new ImpactEffects();contactLoad=new ContactLoadWindow();contactLoadDiagnosticsEnabled=false;
   world = new RAPIER.World({x:0,y:-9.81,z:0});
   private eventQueue=new RAPIER.EventQueue(true);
@@ -85,7 +89,10 @@ export class PhysicsManager {
       this.staticBox({x:sign*(width/2+wall/2),y:height/2+1.5,z:0},{x:wall/2,y:height/2+1.5,z:depth/2+wall},0.65);
       this.staticBox({x:0,y:height/2+1.5,z:sign*(depth/2+wall/2)},{x:width/2,y:height/2+1.5,z:wall/2},0.65);
     }
-    if(closedCeiling)this.staticBox({x:0,y:height+wall/2,z:0},{x:width/2+wall,y:wall/2,z:depth/2+wall},0.65);
+    if(closedCeiling){
+      const ceiling=this.world.createCollider(RAPIER.ColliderDesc.cuboid(width/2+wall,wall/2,depth/2+wall).setTranslation(0,height+wall/2,0).setFriction(.65).setCollisionGroups(0x00020002));
+      this.ceilingHandle=ceiling.handle;
+    }
   }
   private staticBox(p:Vec3,h:Vec3,friction:number) {
     this.world.createCollider(RAPIER.ColliderDesc.cuboid(h.x,h.y,h.z).setTranslation(p.x,p.y,p.z)
@@ -118,6 +125,9 @@ export class PhysicsManager {
     const geometry=geometryUsage(poly,this.geometryLimits);
     if(!staged){this.checkGeometryBudget([],[poly]);if(this.parts.size+1>CONFIG.physics.hardLimit)throw Error('Body budget exceeded');}
     const rho=density??mass/massProperties(poly).volume;const desc=this.prepareCollider(poly,rho);
+    // Bit 2 belongs to the player-only ceiling. NPCs enter from overhead while
+    // upright/player ragdoll colliders keep full ceiling collisions.
+    if(owner==='npc')desc.setCollisionGroups(0xfffdfffd);
     if(this.exactFragmentMassEnabled&&generation>0){const m=exactMassProperties(poly,rho);desc.setMassProperties(m.mass,m.center,m.principal,m.frame);}
     const body=this.world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(pose.position.x,pose.position.y,pose.position.z)
       .setRotation(pose.rotation).setLinearDamping(owner==='npc'?CONFIG.physics.npcLinearDamping:CONFIG.physics.linearDamping).setAngularDamping(owner==='npc'?CONFIG.physics.npcAngularDamping:CONFIG.physics.angularDamping)
@@ -163,7 +173,7 @@ export class PhysicsManager {
     const result={...data,id:this.nextJoint++,handle:joint.handle}; this.joints.set(result.id,result);this.neighborPairs.add(this.pairKey(result.a,result.b));this.componentsDirty=true;return result;
   }
   removeJoint(id:number) {const j=this.joints.get(id);if(j) { const joint=this.world.getImpulseJoint(j.handle);if(joint)this.world.removeImpulseJoint(joint,true);this.joints.delete(id);this.neighborPairs.delete(this.pairKey(j.a,j.b));this.componentsDirty=true;}}
-  removePart(id:number) {const p=this.parts.get(id);if(!p)return;
+  removePart(id:number) {this.incoming.delete(id);const p=this.parts.get(id);if(!p)return;
     for(const j of [...this.joints.values()]) if(j.a===id||j.b===id) this.removeJoint(j.id);
     const geometry=this.geometryById.get(id);if(geometry)this.usedGeometry=addGeometry(this.usedGeometry,geometry,-1);this.geometryById.delete(id);
     this.colliderParts.delete(p.collider.handle);this.world.removeRigidBody(p.body);this.parts.delete(id);this.componentsDirty=true;
@@ -241,8 +251,11 @@ export class PhysicsManager {
   cullOutsideArena(){
     let removed=0;
     for(const part of [...this.parts.values()]){
-      const p=part.body.worldCom();
-      if(Math.abs(p.x)>CONFIG.arena.width/2+CONFIG.arena.wall||p.y<-.35||p.y>CONFIG.arena.height+.35||Math.abs(p.z)>CONFIG.arena.depth/2+CONFIG.arena.wall){this.removePart(part.id);removed++;}
+      const p=part.body.worldCom(),entry=this.incoming.get(part.id);
+      if(entry&&p.y<=CONFIG.arena.height)entry.entered=true;
+      const hiddenEntry=entry&&!entry.entered&&this.time<=entry.expires&&p.y<=CONFIG.arena.height+CONFIG.entry.height;
+      if(entry&&(entry.entered||this.time>entry.expires))this.incoming.delete(part.id);
+      if(Math.abs(p.x)>CONFIG.arena.width/2+CONFIG.arena.wall||p.y<-.35||p.y>CONFIG.arena.height+.35&&!hiddenEntry||Math.abs(p.z)>CONFIG.arena.depth/2+CONFIG.arena.wall){this.removePart(part.id);removed++;}
     }
     return removed;
   }

@@ -34,8 +34,8 @@ export class RagdollFactory {
   }
   entryHeight(type:NpcType,rotation:Quat,options:RagdollOptions={}){
     const plan=this.build(type,vec(),rotation,options);
-    const top=Math.max(...plan.parts.flatMap(p=>vertices(p.poly).map(v=>p.position.y+rotate(v,rotation).y)));
-    return CONFIG.arena.height-top-.08;
+    const bottom=Math.min(...plan.parts.flatMap(p=>vertices(p.poly).map(v=>p.position.y+rotate(v,rotation).y)));
+    return CONFIG.arena.height+CONFIG.entry.clearance-bottom;
   }
   horizontalEnvelope(type:NpcType,rotation:Quat):{min:number;max:number} {
     const plan=this.build(type,vec(),rotation),points=plan.parts.flatMap(p=>vertices(p.poly).map(v=>p.position.x+rotate(v,rotation).x));
@@ -50,7 +50,7 @@ export class RagdollFactory {
     this.physics.world.propagateModifiedBodyPositionsToColliders();
     // Newly created worlds have no query BVH until their first step. Direct contacts
     // validate the tiny (11-part) spawn plan even before that first simulation tick.
-    const external=(c:Parameters<PhysicsManager['partForCollider']>[0])=>c.isEnabled()&&!c.isSensor();
+    const external=(c:Parameters<PhysicsManager['partForCollider']>[0])=>c.isEnabled()&&!c.isSensor()&&(options.owner==='player'||!this.physics.isPlayerCeiling(c));
     const query=new CollisionQuery(this.physics,external);
     for(const p of plan.parts) {
       const shape=p.queryShape;

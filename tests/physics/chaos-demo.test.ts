@@ -38,10 +38,13 @@ it('zero-strength head bursts into debris, keeps remaining body and permanently 
  for(let n=0;n<120;n++)p.step();expect(p.numericFaults).toBe(0);
  }finally{c.dispose();p.dispose();}
 });
-it('closed sixteen-row cup contains player flight, spawns below ceiling and removes escaped fragments',()=>{
+it('sixteen-row cup contains player flight while masked incoming bodies cross the player-only ceiling',()=>{
  const p=new PhysicsManager(),c=new PlayerController(p,true),f=new RagdollFactory(p,2,2),d=new ContinuousDropPlanner(p,f,randomSeed(2));
  try{expect(CONFIG.arena.height).toBe(16);const plan=d.plan('normal',1,0,.9),parts=d.spawn(plan)!;expect(parts).not.toBeNull();
- for(const part of parts)for(const v of vertices(part.poly))expect(part.body.translation().y+rotate(v,part.body.rotation()).y).toBeLessThan(16);
+ for(const part of parts)for(const v of vertices(part.poly))expect(part.body.translation().y+rotate(v,part.body.rotation()).y).toBeGreaterThan(16);
+ expect(p.cullOutsideArena()).toBe(0);
+ for(let n=0;n<90;n++){p.step();p.cullOutsideArena();}
+ expect(parts.every(part=>p.parts.has(part.id))).toBe(true);expect(Math.max(...parts.map(part=>part.body.worldCom().y))).toBeLessThan(16);
  c.current=vec(-3,14,0);c.body.setTranslation(c.current,true);c.flight=true;
  for(let n=0;n<240;n++){c.update({axis:0,pressed:false,released:false,stomp:false},n*CONFIG.dt,CONFIG.dt);p.step();c.afterStep((n+1)*CONFIG.dt);}
  expect(c.current.y).toBeLessThan(15);expect(c.current.y).toBeGreaterThan(14);

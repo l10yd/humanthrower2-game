@@ -1,5 +1,15 @@
 # Chaos demo / 16-row cup
 
+## Hidden overhead entry / records (chaos-v5)
+
+- Corpses spawn wholly above the visible top (lowest point at least 1.2 m above it), retain their physical pose and descend through the foreground mask. NPCs exclude the player-only ceiling collision bit; upright/player ragdoll still cannot cross it. Entry grace is explicit, expires after 6 s, is bounded to an 8 m overhead zone and ends once a part enters the cup. Escaped bodies receive no permanent exemption.
+- Browser pixel test confirms zero scene difference immediately after an offscreen body allocation, then visible pixels after its physical entry. Seven body variants cross progressively in unit tests; player flight/ragdoll ceiling protection, stalled entry timeout and escaped-body cleanup pass.
+- The reported `survival.medkit is not a function` was reproduced on localhost:5173: its long-lived Vite process served the old transformed PlayerSurvival class without medkit while Game had updated. Windows watcher polling and a main-module full reload HMR boundary now prevent half-updated live instances. Server was restarted; a real medkit pickup on that same port verifies method/function, head .30→.55, air 1→3 without errors.
+- Menu displays top five local records for the selected standard profile. Result has row/survival score breakdown, time, combos, drops/events, supplies, medkits/escapes, cause-specific tip and seed. T/button replays completed seed with original mode/NPC/head-control settings. Result snapshot is frozen; start cannot revive a DYING player; abandoning at time zero starts a genuinely new attempt.
+- Record storage fallback is sticky per key after a failed write, preventing stale persisted data from overwriting newer in-memory records. Ties sort score, rows, duration.
+- Build and demo gate: **24 unit tests + 13 browser scenarios pass**, including four natural bot sessions and medkit/records/offscreen tests. Natural sessions remain finite but high solver angular peaks remain a known limitation; offscreen falling changes physical trajectories and does not claim to fix native solver stability.
+- Full unit run: 399/402 pass; failures are the known native angular gate and two asset-validator timeouts. Isolated asset validation recheck passes 3/4 with the CLI timeout still present. Demo gate, mobile and shaders pass; validation timeouts are not marked fixed.
+
 ## Medical / hazard pass (chaos-v4)
 
 - White medical drops with a red cross appear at simulation time 18 s, then every 22 s, independently of the weapon/event RNG. Proximity consumes each once. Restore up to 25 percentage points of bruised retained-tissue durability and 2 s air; never regrow limbs or resurrect. Pause/death do not collect them.

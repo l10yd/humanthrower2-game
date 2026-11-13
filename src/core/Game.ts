@@ -1,3 +1,4 @@
+import { LOSS_LABELS,LOSS_TIPS,formatDuration,runBreakdown,type RunDetails } from '../gameplay/RunSummary';
 import { bombPlayer } from '../gameplay/HazardDamage';
 import { canCarryWeapon, WeaponSupplies } from '../gameplay/WeaponSupplies';
 import { ChaosDirector, CHAOS_EVENTS } from '../gameplay/ChaosDirector';
@@ -53,7 +54,11 @@ export class Game {
   mode:'demo'|'technical'='demo';survival=new PlayerSurvival(this.player.damage);buried=false;
   readonly profile:'desktop'|'mobile'=window.matchMedia('(pointer: coarse)').matches?'mobile':'desktop';
   private gameplaySettingsChanged=false;
-  get recordProfile(){return {rulesVersion:RULES_VERSION,profile:this.profile,arenaPreset:`9x${CONFIG.arena.height}x2.4-chaos-v4-${this.mode}-${this.npcMode}${this.preferences.settings.headControlFaults?'-head-faults-on':''}`,assisted:this.gameplaySettingsChanged};}
+  private sessionStarted=false;
+  private runDetails:RunDetails|null=null;
+  private initialSettings={mode:'demo' as 'demo'|'technical',npcMode:'twitch' as 'twitch'|'hunt',headControlFaults:this.preferences.settings.headControlFaults};
+  private completedSettings:typeof this.initialSettings|null=null;
+  get recordProfile(){return {rulesVersion:RULES_VERSION,profile:this.profile,arenaPreset:`9x${CONFIG.arena.height}x2.4-chaos-v5-${this.mode}-${this.npcMode}${this.preferences.settings.headControlFaults?'-head-faults-on':''}`,assisted:this.gameplaySettingsChanged};}
   private deathReason:LossReason='IMPACT';
   chaos=new ChaosDirector(randomSeed(20261111^0xabcdef));sky=new SkyDrops();culled=0;
   private nextChaosDrop=0;private nextHazard=0;
@@ -83,6 +88,7 @@ export class Game {
       if(this.pauseMenu.open&&key==='Enter')return;
       if(key==='Escape'||key==='KeyP'){if(this.pauseMenu.open&&this.state!=='PAUSED')this.pauseMenu.close();else this.togglePause();}
       if(!this.pauseMenu.open&&(key==='KeyR'||key==='Enter'&&this.state==='GAME_OVER'))this.newSession();
+      if(key==='KeyT'&&!this.pauseMenu.open&&this.state==='GAME_OVER')this.replaySession();
       if(key==='KeyF'&&!this.pauseMenu.open&&this.state==='RUNNING')this.toggleSaw();
       if(key==='KeyQ'&&!this.pauseMenu.open&&this.state==='RUNNING')this.cycleWeapon();
     },canvas,()=>!this.pauseMenu.open&&(this.state==='RUNNING'||this.state==='PAUSED'&&this.pausedState==='RUNNING'));
@@ -102,7 +108,8 @@ export class Game {
     this.listen(canvas,'pointermove',e=>{if(this.pauseMenu.open)return;const p=e as PointerEvent;this.saw.aim=this.renderer.worldPoint(p.clientX,p.clientY);});
     this.listen(canvas,'pointerleave',()=>{this.saw.aim=null;});
     this.listen(document,'visibilitychange',()=>{if(document.hidden&&(this.state==='RUNNING'||this.state==='DYING'))this.pause();});
-    this.listen(document.querySelector('#start')!,'click',()=>{if(this.state==='GAME_OVER'||this.state==='TITLE'&&this.now>0)this.newSession();else if(this.state==='TITLE')this.start();});
+    this.listen(document.querySelector('#start')!,'click',()=>{if(this.state==='GAME_OVER'||this.state==='TITLE'&&this.sessionStarted)this.newSession();else if(this.state==='TITLE')this.start();});
+    this.listen(document.querySelector('#replay-run')!,'click',()=>this.replaySession());
     this.listen(document.querySelector('#title')!,'click',()=>this.showTitle());
     this.listen(document.querySelector('#pause')!,'click',()=>this.togglePause());
     this.listen(document.querySelector('#settings')!,'click',()=>{if(this.state==='RUNNING'||this.state==='DYING')this.pause();else this.pauseMenu.show(this.state==='PAUSED');});
@@ -133,7 +140,16 @@ export class Game {
     document.querySelector<HTMLElement>('#app')!.dataset.state=this.state;
     document.querySelector<HTMLElement>('#app')!.dataset.debug=String(new URLSearchParams(location.search).has('debug'));
     const start=document.querySelector<HTMLButtonElement>('#start')!;start.disabled=false;start.textContent='Играть в демо';
+    this.syncRecordUI();
     this.request=requestAnimationFrame(this.frame);
+  }
+  private syncRecordUI(){
+    const panel=document.querySelector<HTMLElement>('#record-board')!,records=this.records.list({...this.recordProfile,assisted:false});
+    panel.hidden=this.state!=='TITLE';panel.replaceChildren();
+    const heading=document.createElement('strong');heading.textContent='ЛОКАЛЬНЫЕ РЕКОРДЫ · '+(this.mode==='demo'?'ДЕМО':'ТЕХНИЧЕСКИЙ РЕЖИМ');panel.append(heading);
+    if(!records.length){const empty=document.createElement('p');empty.textContent='Пока нет забегов. Очищай ряды и поставь первый рекорд!';panel.append(empty);}
+    else{const list=document.createElement('ol');for(const record of records.slice(0,5)){const item=document.createElement('li');item.textContent=`${record.score} очков · ${formatDuration(record.durationSeconds)} · ${record.rows} рядов`;list.append(item);}panel.append(list);}
+    if(this.records.unavailable){const note=document.createElement('small');note.textContent='Хранение недоступно — рекорды только в этой вкладке.';panel.append(note);}
   }
   private syncTutorialUI(){
     const t=this.tutorial,hint=t.hint,visible=(this.state==='RUNNING'||this.state==='PAUSED')&&this.mode==='demo'&&t.enabled&&!t.completed&&hint!==null;
@@ -182,7 +198,7 @@ export class Game {
   private cycleWeapon(){if(this.state!=='RUNNING'&&!(this.state==='PAUSED'&&this.pausedState==='RUNNING'))return;this.weapons.cycle();this.audio.saw(false,false);this.syncSawUI();}
   private toggleSaw(){if(this.state!=='RUNNING')return;this.weapons.toggle();this.audio.saw(false,false);this.syncSawUI();}
   private restartFromSettings(){const keepPaused=this.state==='PAUSED';this.restart();if(keepPaused)this.pause();}
-  start(){if(this.contextLost)return;this.pauseMenu.close();this.state='RUNNING';this.audio.setRunning(true);this.input.clear();this.lastFrame=0;this.accumulator=0;
+  start(){if(this.contextLost||this.state==='DYING'||this.state==='GAME_OVER'||this.state==='PAUSED'&&this.pausedState==='DYING')return;this.sessionStarted=true;document.querySelector<HTMLElement>('#record-board')!.hidden=true;document.querySelector<HTMLElement>('#run-details')!.hidden=true;document.querySelector<HTMLElement>('#replay-run')!.hidden=true;this.pauseMenu.close();this.state='RUNNING';this.audio.setRunning(true);this.input.clear();this.lastFrame=0;this.accumulator=0;
     document.querySelector<HTMLElement>('#app')!.dataset.state='RUNNING';
     document.querySelector<HTMLElement>('#app')!.dataset.dying='false';this.pausedState='RUNNING';
     document.querySelector<HTMLElement>('#overlay')!.hidden=true;document.querySelector<HTMLButtonElement>('#pause')!.disabled=false;
@@ -198,14 +214,22 @@ export class Game {
       else this.start();
     }
   }
+  replaySession(){
+    if(this.state!=='GAME_OVER'||!this.result||!this.completedSettings)return;
+    const seed=Number(this.result.seed),settings=this.completedSettings;
+    this.mode=settings.mode;this.npcMode=settings.npcMode;this.preferences.setHeadControlFaults(settings.headControlFaults);
+    document.querySelector<HTMLSelectElement>('#mode')!.value=this.mode;document.querySelector<HTMLSelectElement>('#npc-mode')!.value=this.npcMode;document.querySelector<HTMLInputElement>('#head-control-faults')!.checked=settings.headControlFaults;
+    this.restart(seed);
+  }
   newSession(){const seed=crypto.getRandomValues(new Uint32Array(1))[0];this.restart(seed);}
   restart(seed=this.sessionSeed){
     if(!Number.isInteger(seed)||seed<0||seed>0xffffffff)throw Error('Session seed must be an unsigned 32-bit integer');
-    this.sessionSeed=seed;this.gameplaySettingsChanged=false;
+    this.sessionSeed=seed;this.gameplaySettingsChanged=false;this.runDetails=null;this.completedSettings=null;
+    this.initialSettings={mode:this.mode,npcMode:this.npcMode,headControlFaults:this.preferences.settings.headControlFaults};
     this.tutorial.reset();this.audio.resetSession();this.input.clear();this.player.dispose();this.physics.dispose();this.physics=new PhysicsManager();this.factory=new RagdollFactory(this.physics,CONFIG.spawn.npcScale,CONFIG.spawn.npcMassMultiplier);this.player=new PlayerController(this.physics,this.mode==='demo',this.preferences.settings.headControlFaults);
     this.saw=new SawController(this.physics,this.player,true);this.freshDrops=new FreshDropMotion(this.physics);this.living=new LivingNpcs(this.physics,this.npcMode);this.spawnForms={};this.weapons=new WeaponController(this.physics,this.player,this.saw,this.mode==='demo');this.chaos=new ChaosDirector(randomSeed(this.sessionSeed^0xabcdef));this.supplies=new WeaponSupplies(randomSeed(this.sessionSeed^0x51f15e));this.medicalRandom=randomSeed(this.sessionSeed^0x6d3d);this.medicalUsed=0;this.sky=new SkyDrops();this.culled=0;this.nextChaosDrop=this.nextHazard=0;this.renderer.cameraShake=0;this.saw.arcadeGuardEnabled=this.mode==='demo';this.gore.reset();this.syncSawUI();this.deathRemaining=0;this.deathAt=null;this.pausedState='RUNNING';this.syncQteUI();
     this.detector=new RowDetector();this.occupancy=new OccupancyRaster();this.random=randomSeed(this.sessionSeed);this.now=0;this.scoring=new ScoreManager();this.difficulty=new DifficultyManager();this.loss=new LossDetector();this.squeeze=new SqueezeProbe(this.physics,this.player);this.result=null;this.drops=0;this.scheduler=new DropScheduler(this.mode);this.playerTimings=[];this.playerUpdateMs=0;this.playerUpdateP95=0;
-    this.warning=null;this.continuous=new ContinuousDropPlanner(this.physics,this.factory,this.random);this.survival=new PlayerSurvival(this.mode==='demo'?this.player.damage:null);this.buried=false;document.querySelector<HTMLButtonElement>('#cut')!.disabled=this.mode==='demo';this.planner=new SpawnPlanner(this.physics,this.factory,this.random);this.blockedSince=null;this.nextMeasure=0;this.droppedTime=0;this.spawnBlocked=0;this.spawnCommitBlocks={budget:0,overlap:0};this.input.clear();document.querySelector('#error')!.textContent='';this.start();}
+    this.warning=null;this.continuous=new ContinuousDropPlanner(this.physics,this.factory,this.random);this.survival=new PlayerSurvival(this.mode==='demo'?this.player.damage:null);this.buried=false;document.querySelector<HTMLButtonElement>('#cut')!.disabled=this.mode==='demo';this.planner=new SpawnPlanner(this.physics,this.factory,this.random);this.blockedSince=null;this.nextMeasure=0;this.droppedTime=0;this.spawnBlocked=0;this.spawnCommitBlocks={budget:0,overlap:0};this.input.clear();document.querySelector('#error')!.textContent='';this.state='TITLE';this.start();}
   showTitle(){
     this.pauseMenu.close();
     document.querySelector<HTMLElement>('#app')!.dataset.state='TITLE';
@@ -213,6 +237,7 @@ export class Game {
     document.querySelector<HTMLElement>('#overlay')!.hidden=false;document.querySelector('#overlay h1')!.textContent='HUMANTHROWER';
     document.querySelector('#summary')!.textContent='Физическая survival-аркада · демо';
     document.querySelector<HTMLElement>('#instructions')!.hidden=false;document.querySelector<HTMLElement>('#title')!.hidden=true;
+    this.syncRecordUI();document.querySelector<HTMLElement>('#run-details')!.hidden=true;document.querySelector<HTMLElement>('#replay-run')!.hidden=true;
     document.querySelector('#start')!.textContent='Новая сессия';document.querySelector<HTMLButtonElement>('#pause')!.disabled=true;
   }
   private finish(reason:LossReason){
@@ -221,11 +246,19 @@ export class Game {
     this.audio.setRunning(false);this.weapons.cancel();this.player.qte.reset();this.state='GAME_OVER';this.input.clear();this.accumulator=0;
     const record:SessionRecord={...this.recordProfile,seed:String(this.sessionSeed),score:this.scoring.total(this.now),rows:this.rows,
       durationSeconds:this.deathAt??this.now,maxCombo:this.scoring.maxCombo,drops:this.drops,lossReason:reason};
-    this.result=record;const best=this.records.save(record)[0]?.score??record.score;
-    const reasons={ROW_CLEAR:'ПОГИБ В ОЧИЩАЕМОМ РЯДУ',RESILIENCE:'СТОЙКОСТЬ ИСЧЕРПАНА',OVERFLOW:'КАМЕРА ПЕРЕПОЛНЕНА',SQUEEZE:'ЗАЖАТ ПОД КУЧЕЙ',IMPACT:'ПОГИБ ОТ УДАРОВ',SUFFOCATION:'ЗАДОХНУЛСЯ ПОД ТЕЛАМИ'};
-    document.querySelector<HTMLElement>('#overlay')!.hidden=false;document.querySelector('#overlay h1')!.textContent=reasons[reason];
+    const previousBest=this.records.list(this.recordProfile)[0]?.score??null;
+    this.result=Object.freeze(record);this.runDetails=Object.freeze({rowPoints:this.scoring.points,events:this.chaos.events,weapons:this.sky.collected,broken:this.weapons.inventory.broken,medkits:this.medicalUsed,escapes:this.player.qte.escapes});this.completedSettings={...this.initialSettings};
+    const best=this.records.save(record)[0]?.score??record.score;
+    const newBest=previousBest===null||record.score>previousBest;
+    document.querySelector<HTMLElement>('#overlay')!.hidden=false;document.querySelector('#overlay h1')!.textContent=LOSS_LABELS[reason];
     document.querySelector<HTMLElement>('#instructions')!.hidden=true;document.querySelector<HTMLElement>('#title')!.hidden=false;
-    document.querySelector('#summary')!.textContent=`${record.score} очков · ${Math.floor(record.durationSeconds)} с · ${record.rows} рядов · максимум ×${record.maxCombo.toFixed(2)} · ${record.drops} сбросов · ${this.chaos.events} событий · ${this.medicalUsed} аптечек · рекорд ${best}${this.records.unavailable?' (хранение недоступно — только эта вкладка)':''}`;
+    document.querySelector('#summary')!.textContent=`${newBest?'НОВЫЙ РЕКОРД! · ':''}${record.score} очков · рекорд ${best}${record.assisted?' · настройки менялись в забеге':''}${this.records.unavailable?' · только эта вкладка':''}`;
+    document.querySelector<HTMLElement>('#record-board')!.hidden=true;
+    const details=document.querySelector<HTMLElement>('#run-details')!;details.hidden=false;details.replaceChildren();
+    for(const entry of runBreakdown(record,this.runDetails)){const item=document.createElement('div'),label=document.createElement('small'),value=document.createElement('strong');label.textContent=entry.label;value.textContent=entry.value;item.append(label,value);details.append(item);}
+    const tip=document.createElement('p');tip.className='run-tip';tip.textContent=LOSS_TIPS[reason];details.append(tip);
+    const seed=document.createElement('small');seed.textContent=`Seed: ${record.seed} · T — повтор с исходными настройками. Тот же seed; физика зависит от твоих действий.`;details.append(seed);
+    document.querySelector<HTMLElement>('#replay-run')!.hidden=false;
     document.querySelector('#hint')!.textContent=reason==='ROW_CLEAR'?'Голова или корпус попали в срез. Потеря конечности сама по себе не смертельна.':'Сессия завершена. Нажми Enter / R, чтобы попробовать ещё раз.';
     document.querySelector('#player-status')!.textContent='СЕССИЯ ЗАВЕРШЕНА';
     document.querySelector('#start')!.textContent='Ещё раз · Enter / R';document.querySelector<HTMLButtonElement>('#pause')!.disabled=true;
@@ -401,7 +434,7 @@ export class Game {
       this.lastHud=timestamp;
     }
   };
-  debugSnapshot(){return {medicalUsed:this.medicalUsed,visualTime:this.visualTime,chaos:this.chaos.snapshot,sky:this.sky.snapshot,culled:this.culled,deathRemaining:this.deathRemaining,arena:{...CONFIG.arena},seed:this.sessionSeed,tutorial:this.tutorial.snapshot,freshDrops:this.freshDrops.snapshot,living:this.living.snapshot,spawnForms:{...this.spawnForms},environment:this.renderer.shaft?.snapshot??null,character:this.renderer.character?.snapshot??null,state:this.state,time:this.now,parts:this.physics.parts.size,geometry:this.physics.geometryUsage,joints:this.physics.joints.size,rows:this.rows,drops:this.drops,
+  debugSnapshot(){return {runDetails:this.runDetails?{...this.runDetails}:null,medicalUsed:this.medicalUsed,visualTime:this.visualTime,chaos:this.chaos.snapshot,sky:this.sky.snapshot,culled:this.culled,deathRemaining:this.deathRemaining,arena:{...CONFIG.arena},seed:this.sessionSeed,tutorial:this.tutorial.snapshot,freshDrops:this.freshDrops.snapshot,living:this.living.snapshot,spawnForms:{...this.spawnForms},environment:this.renderer.shaft?.snapshot??null,character:this.renderer.character?.snapshot??null,state:this.state,time:this.now,parts:this.physics.parts.size,geometry:this.physics.geometryUsage,joints:this.physics.joints.size,rows:this.rows,drops:this.drops,
     player:{...this.player.current},playerState:this.player.state,playerParts:this.player.ragdoll.parts.length,knockdowns:this.player.ragdoll.knockdowns,
     getUpBlocked:this.player.ragdoll.blocked,underPressure:this.player.underPressure,grounded:this.player.grounded,maxSpeed:this.physics.maxSpeed,maxAngularSpeed:this.physics.maxAngularSpeed,
     numericFaults:this.physics.numericFaults,npcSelfContacts:this.physics.npcSelfContactsEnabled,solverSubsteps:this.physics.solverSubsteps,deferredContacts:this.physics.deferredContacts,pairSeparations:this.physics.pairSeparations,separationMs:this.physics.separationMs,droppedTime:this.droppedTime,spawnBlocked:this.spawnBlocked,spawnBlockReasons:{...this.planner.blocked},spawnCommitBlocks:{...this.spawnCommitBlocks},

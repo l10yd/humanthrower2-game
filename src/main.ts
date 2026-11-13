@@ -6,6 +6,9 @@ import { loadIndustrialShaft } from './assets/IndustrialShaft';
 declare global { interface Window { humanthrower:Game } }
 async function boot(){try {
   await RAPIER.init();
+  // A gameplay class change must replace the live Game too, rather than leave
+  // instances created with the previous prototype in a half-updated module graph.
+  if(import.meta.hot){import.meta.hot.dispose(()=>window.humanthrower?.dispose());import.meta.hot.accept(()=>location.reload());}
   const options=new URLSearchParams(location.search);
   const art=options.get('art')!=='off';
   const jobs=art?[
