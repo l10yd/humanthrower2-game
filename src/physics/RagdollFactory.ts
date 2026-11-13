@@ -32,6 +32,11 @@ export class RagdollFactory {
       return {name:t.name,poly,queryShape:new RAPIER.Cuboid(t.half.x*scale.x,t.half.y*scale.y,t.half.z*scale.z),position:add(position,rotate(center,rotation)),mass:t.mass*spec.mass/72*(options.owner==='player'?1:this.massMultiplier)*(poly===original?1:massProperties(poly).volume/massProperties(original).volume)};});
     return {type,parts,scale};
   }
+  entryHeight(type:NpcType,rotation:Quat,options:RagdollOptions={}){
+    const plan=this.build(type,vec(),rotation,options);
+    const top=Math.max(...plan.parts.flatMap(p=>vertices(p.poly).map(v=>p.position.y+rotate(v,rotation).y)));
+    return CONFIG.arena.height-top-.08;
+  }
   horizontalEnvelope(type:NpcType,rotation:Quat):{min:number;max:number} {
     const plan=this.build(type,vec(),rotation),points=plan.parts.flatMap(p=>vertices(p.poly).map(v=>p.position.x+rotate(v,rotation).x));
     return {min:Math.min(...points),max:Math.max(...points)};

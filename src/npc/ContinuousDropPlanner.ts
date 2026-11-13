@@ -1,8 +1,7 @@
 import { CONFIG } from '../core/Config';
 import { RAPIER, type PhysicsManager } from '../physics/PhysicsManager';
 import { RagdollFactory,type RagdollOptions } from '../physics/RagdollFactory';
-import { axisAngle, rotate, vec } from '../slicing/Math';
-import { vertices } from '../slicing/ConvexClipper';
+import { axisAngle, vec } from '../slicing/Math';
 import type { DropPlan } from './SpawnPlanner';
 /** Demo policy: no safe-route or awake-budget waits. Geometry and total-body cap remain. */
 export class ContinuousDropPlanner {
@@ -19,9 +18,7 @@ export class ContinuousDropPlanner {
   const rotation=axisAngle(vec(0,0,1),spec.angle);
   // Spawn fully inside the closed ceiling. Occupied entry waits for space; never
   // stack invisible bodies above the arena or teleport them through the roof.
-  const plan=this.factory.build(spec.type,vec(),rotation,options);
-  const top=Math.max(...plan.parts.flatMap(p=>vertices(p.poly).map(v=>p.position.y+rotate(v,rotation).y)));
-  const y=CONFIG.arena.height-top-.08;
+  const y=this.factory.entryHeight(spec.type,rotation,options);
   return this.factory.spawn(spec.type,vec(spec.x,y,0),rotation,true,options);
  }
 }

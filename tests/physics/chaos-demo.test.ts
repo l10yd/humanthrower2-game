@@ -1,4 +1,5 @@
-import { beforeAll,expect,it } from 'vitest';
+import { beforeAll,expect,it,vi } from 'vitest';
+import { WeaponSupplies } from '../../src/gameplay/WeaponSupplies';
 import { CONFIG,randomSeed } from '../../src/core/Config';
 import { ChaosDirector } from '../../src/gameplay/ChaosDirector';
 import { WeaponInventory } from '../../src/gameplay/WeaponInventory';
@@ -45,6 +46,59 @@ it('closed sixteen-row cup contains player flight, spawns below ceiling and remo
  for(let n=0;n<240;n++){c.update({axis:0,pressed:false,released:false,stomp:false},n*CONFIG.dt,CONFIG.dt);p.step();c.afterStep((n+1)*CONFIG.dt);}
  expect(c.current.y).toBeLessThan(15);expect(c.current.y).toBeGreaterThan(14);
  const escaped=p.createPart(box(.1,.1,.1),{position:vec(12,5,0),rotation:identity},1,900,'escaped');expect(p.cullOutsideArena()).toBeGreaterThan(0);expect(p.parts.has(escaped.id)).toBe(false);
+ }finally{c.dispose();p.dispose();}
+});
+it('supplies start with a saw, cover all kinds and exclude weapons requiring missing arms',()=>{
+ const p=new PhysicsManager(),c=new PlayerController(p,true);
+ try{
+  const a=new WeaponSupplies(randomSeed(17)),b=new WeaponSupplies(randomSeed(17));
+  const first=Array.from({length:7},()=>a.next(c.damage));expect(first[0]).toBe('saw');expect(new Set(first).size).toBe(7);expect(first).toEqual(Array.from({length:7},()=>b.next(c.damage)));
+  c.damage.retain('upperArm-1',0);c.damage.retain('upperArm1',0);
+  for(let i=0;i<10;i++)expect(['rotor','svarlHead']).toContain(a.next(c.damage));
+  c.damage.parts.head=0;expect(a.next(c.damage)).toBeNull();
+ }finally{c.dispose();p.dispose();}
+});
+it('switching or collecting a launcher cannot reset the global shot cooldown',()=>{
+ const p=new PhysicsManager(),c=new PlayerController(p,true),w=new WeaponController(p,c,new SawController(p,c,true),true);
+ const attack={axis:0,pressed:false,released:false,stomp:false,saw:true};
+ try{
+  w.collect('launcher');w.update(attack,CONFIG.dt);expect(w.shots).toBe(1);
+  w.collect('axe');w.select('launcher');w.update(attack,CONFIG.dt);expect(w.shots).toBe(1);
+  w.collect('launcher');w.update(attack,CONFIG.dt);expect(w.shots).toBe(1);
+  for(let i=0;i<50;i++)w.update(attack,CONFIG.dt);expect(w.shots).toBe(2);
+ }finally{c.dispose();p.dispose();}
+});
+it('projectile impacts do not wear the unrelated melee weapon currently equipped',()=>{
+ const p=new PhysicsManager(),c=new PlayerController(p,true),w=new WeaponController(p,c,new SawController(p,c,true),true);
+ try{
+  w.collect('axe');vi.spyOn(w,'tickProjectiles').mockImplementation(()=>{w.cuts=[{point:vec(),normal:vec(0,1,0),wounds:[],fragments:2,removedMass:1}];});
+  w.update({axis:0,pressed:false,released:false,stomp:false,saw:true},CONFIG.dt);expect(w.inventory.stock.axe).toBeCloseTo(100-CONFIG.dt*1.5,6);
+ }finally{c.dispose();p.dispose();}
+});
+it('sky drops still move during death without pickup, damage or knockdown',()=>{
+ const p=new PhysicsManager(),c=new PlayerController(p,true),s=new SkyDrops();
+ try{
+  const item=s.spawn('weapon',0,'axe');item.position={...c.current};
+  const hit=vi.spyOn(c.damage,'hit'),knock=vi.spyOn(c,'knockDownFromAttack');
+  const saw=s.spawn('saw',0);saw.position=vec(0,c.current.y+.4,0);
+  const outcome=s.update(p,c,CONFIG.dt,false);expect(outcome.collected).toEqual([]);expect(s.items.some(i=>i.id===item.id)).toBe(true);expect(hit).not.toHaveBeenCalled();expect(knock).not.toHaveBeenCalled();
+ }finally{c.dispose();p.dispose();}
+});
+it('death preflights all chunks and rolls staged allocation back before removing the original',()=>{
+ const p=new PhysicsManager(),c=new PlayerController(p,true),g=new GoreSystem();
+ try{
+  c.collider.setEnabled(false);c.ragdoll.knockDown(c.current,vec(),0);c.damage.parts.head=0;
+  const head=c.ragdoll.parts.find(x=>x.limb==='head')!,original=p.createPart.bind(p);let calls=0;
+  vi.spyOn(p,'createPart').mockImplementation((...args)=>{if(++calls===2)throw Error('injected debris allocation');return original(...args);});
+  expect(()=>burstPlayer(p,c,g,0)).toThrow('injected debris allocation');expect(p.parts.get(head.id)).toBe(head);expect(head.body.isValid()).toBe(true);expect(p.parts.size).toBe(11);
+ }finally{c.dispose();p.dispose();}
+});
+it('a full physics world still finishes death with blood instead of allocating over budget',()=>{
+ const p=new PhysicsManager(),c=new PlayerController(p,true),g=new GoreSystem();
+ try{
+  c.collider.setEnabled(false);c.ragdoll.knockDown(c.current,vec(),0);
+  while(p.parts.size<CONFIG.physics.hardLimit)p.createPart(box(.02,.02,.02),{position:vec(3,10,0),rotation:identity},.01,5000+p.parts.size,'budget');
+  c.damage.parts.head=0;expect(()=>burstPlayer(p,c,g,0)).not.toThrow();expect(p.parts.size).toBeLessThanOrEqual(CONFIG.physics.hardLimit);expect(c.ragdoll.dead).toBe(true);expect(g.emitted).toBeGreaterThan(0);
  }finally{c.dispose();p.dispose();}
 });
 it('sky pickups are collected by proximity, bombs hit floor and escaped drops expire',()=>{

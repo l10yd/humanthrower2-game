@@ -1,5 +1,16 @@
 # Chaos demo / 16-row cup
 
+## Polish pass (chaos-v3)
+
+- First supply is a saw; an independent seeded shuffle bag cycles through all usable kinds before repeats. Arm loss restricts future supplies to head weapons. Manual new-session controls choose a new crypto seed; `restart(seed)` remains reproducible.
+- Swapping, recollecting or breaking a weapon no longer resets the global attack cooldown. Grenade cuts do not consume durability of an unrelated equipped melee weapon.
+- Death has a separate visual clock: grenades/sky hazards continue for the two seconds, but no pickup/damage/input is processed. Exact zero-time death records work; restarting clears stale death blur/pause state.
+- Death chunks are staged before replacing the source, and full-budget deaths use blood rather than exceeding allocation limits. No solver cap or arbitrary fragment pruning introduced.
+- Bomb warning marks its fixed column; supply halo is pulsed and visible in front of debris. Stopped pickups reset velocity before falling again, preventing accumulated fall-speed jumps.
+- Technical entry checks and actual spawn now share the same fully internal ceiling position.
+- `npm run build` and `npm run test:demo` pass: **12 unit/physics + 6 browser tests**. Four ordinary bot sessions (seeds 17/42/93/20261111) finish cleanly at ~13/24/20/49 s, collect supplies, preserve object bounds; two sessions clear rows. Additional mobile controls, shader checks, continuous demo and descending-impact death checks pass.
+- Full suite: **388/390 passed** in parallel with browser verification; remaining failures were known ragdoll angular gate and asset CLI timeout. Asset CLI isolated rerun passes 4/4. Large angular peaks in natural sessions remain an explicit experimental limitation, not a claim of physical stability.
+
 ## Implemented
 
 - Fatal head/chest/pelvis strength: materialize dead ragdoll, fracture depleted vital geometry into four chunks, spray blood and apply bounded outward velocity. No recovery/input during death. Simulation-time 2-second death stage; pausing freezes it. CSS blur/vignette precede the fading result overlay.

@@ -15,6 +15,7 @@ import type { Row } from '../grid/RowDetector';
 import type { PlayerController } from '../player/PlayerController';
 import type { SawController } from '../gameplay/SawController';
 import type { GoreSystem } from '../gameplay/GoreSystem';
+import type { ChaosEvent } from '../gameplay/ChaosDirector';
 import type { SkyItem } from '../gameplay/SkyDrops';
 import type { WeaponController, WeaponKind } from '../gameplay/WeaponController';
 export function geometry(poly:ConvexPolyhedron,blood=true,atlasCaps=false):THREE.BufferGeometry {
@@ -109,7 +110,8 @@ export const compositeFragment=`
   }
 `;
 export class RetroRenderer {
-  cameraShake=0;skyDrops:SkyItem[]=[];
+  cameraShake=0;skyDrops:SkyItem[]=[];chaosWarning:ChaosEvent|null=null;
+  private hazardLane:THREE.Mesh;
   private skyVisuals=new Map<number,THREE.Group>();
   batches=new PartBatches();
   shadows=new LowResShadows();
@@ -183,6 +185,8 @@ export class RetroRenderer {
     this.sawProgress.name='SawCutProgress';
     this.sawProgress.visible=false;this.sawProgress.renderOrder=10;this.scene.add(this.sawProgress);
     this.buildWeapons();this.buildArenaMask();
+    this.hazardLane=new THREE.Mesh(new THREE.PlaneGeometry(1.7,CONFIG.arena.height),new THREE.MeshBasicMaterial({color:'#ff603b',transparent:true,opacity:.13,depthTest:false,depthWrite:false}));
+    this.hazardLane.name='ChaosHazardLane';this.hazardLane.position.set(0,CONFIG.arena.height/2,1.5);this.hazardLane.renderOrder=20;this.hazardLane.visible=false;this.scene.add(this.hazardLane);
     // Allocate the same 11-part player visual for upright and dynamic states on first render.
     this.resize();this.configure({});window.addEventListener('resize',this.resize);
   }
@@ -257,7 +261,7 @@ export class RetroRenderer {
           mesh(new THREE.BoxGeometry(.85,.6,.5),'#3c906b');
           const source=item.weapon==='saw'?this.sawVisual:this.weaponVisuals.get(item.weapon!);
           if(source){const weapon=source.clone(true);weapon.visible=true;weapon.scale.setScalar(.38);weapon.position.set(-.28,0,.4);g.add(weapon);}
-          const ring=mesh(new THREE.RingGeometry(.55,.62,16),'#a6ffc4');ring.position.z=.5;
+          const ring=mesh(new THREE.RingGeometry(.55,.62,16),'#a6ffc4');ring.position.z=.5;ring.name='SupplyHalo';ring.material.depthTest=false;ring.material.depthWrite=false;ring.renderOrder=30;
         }else if(item.kind==='saw'){
           const disk=mesh(new THREE.CylinderGeometry(.48,.48,.12,16),'#c5d2d4');disk.rotation.x=Math.PI/2;
           for(let i=0;i<12;i++){const tooth=mesh(new THREE.ConeGeometry(.08,.2,3),'#faf3cc');const a=i/12*Math.PI*2;tooth.position.set(Math.sin(a)*.49,Math.cos(a)*.49,0);tooth.rotation.z=-a;}
@@ -268,6 +272,7 @@ export class RetroRenderer {
         this.scene.add(g);this.skyVisuals.set(item.id,g);
       }
       g.position.set(item.position.x,item.position.y,.35);g.rotation.z=item.kind==='weapon'?Math.sin(item.spin)*.12:item.spin;
+      const halo=g.getObjectByName('SupplyHalo');if(halo)halo.scale.setScalar(1+.1*Math.sin(item.spin*3));
     }
   }
   configure(input:Partial<RetroSettings>){
@@ -309,6 +314,8 @@ export class RetroRenderer {
   }
   render(parts:Iterable<Part>,player:PlayerController,rows:Row[],warningX:number[]|number|null,now:number,alpha:number,saw?:SawController,gore?:GoreSystem,weapons?:WeaponController) {
     this.camera.position.x=Math.sin(now*27)*this.cameraShake;this.camera.position.y=CONFIG.arena.height/2+Math.cos(now*31)*this.cameraShake;
+    this.hazardLane.visible=this.chaosWarning?.kind==='bomb'&&!this.chaosWarning.started;
+    if(this.hazardLane.visible){this.hazardLane.position.x=this.chaosWarning!.x;(this.hazardLane.material as THREE.MeshBasicMaterial).opacity=.1+.08*(.5+.5*Math.sin(now*10));}
     this.renderSky();this.batches.begin();
     const renderStart=performance.now();
     const blood=gore?.mode!=='off',visibleParts=new Map<number,Part>();

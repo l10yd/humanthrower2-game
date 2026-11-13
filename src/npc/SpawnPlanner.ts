@@ -23,7 +23,7 @@ export class SpawnPlanner {
   plan(type:NpcType,angle:number,player:Vec3,now:number,delay:number,level:number,excluded:number[]=[]):DropPlan|null {
     this.lastBlock=null;
     if(!this.budgetAvailable())return this.reject('budget');
-    const rotation=axisAngle(vec(0,0,1),angle),height=CONFIG.arena.height+1.5;
+    const rotation=axisAngle(vec(0,0,1),angle),height=this.factory.entryHeight(type,rotation);
     const plan=this.factory.build(type,vec(0,height,0),rotation);
     const offsets=plan.parts.flatMap(p=>vertices(p.poly).map(v=>p.position.x+rotate(v,rotation).x));
     const minX=Math.min(...offsets),maxX=Math.max(...offsets);

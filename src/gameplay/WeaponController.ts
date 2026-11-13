@@ -1,3 +1,4 @@
+import { canCarryWeapon } from './WeaponSupplies';
 import { WeaponInventory } from './WeaponInventory';
 import { CONFIG } from '../core/Config';
 import { PhysicsManager, RAPIER } from '../physics/PhysicsManager';
@@ -21,7 +22,7 @@ export class WeaponController {
   constructor(private physics:PhysicsManager,private player:PlayerController,public saw:SawController,public limited=false){if(limited)this.saw.enabled=false;}
   get enabled(){return this.saw.enabled&&(!this.limited||this.inventory.has(this.selected));}
   collect(kind:WeaponKind){this.inventory.collect(kind);this.select(kind);this.saw.enabled=true;}
-  select(kind:string){if(!Object.hasOwn(WEAPONS,kind)||this.limited&&!this.inventory.has(kind as WeaponKind))return;this.cancel();this.selected=kind as WeaponKind;this.cooldown=0;}
+  select(kind:string){if(!Object.hasOwn(WEAPONS,kind)||this.limited&&!this.inventory.has(kind as WeaponKind))return;this.cancel();this.selected=kind as WeaponKind;}
   cycle(){const kinds=this.limited?this.inventory.kinds:Object.keys(WEAPONS) as WeaponKind[];if(kinds.length)this.select(kinds[(kinds.indexOf(this.selected)+1)%kinds.length]);}
   toggle(){if(this.limited&&!this.inventory.has(this.selected))return;this.saw.toggle();this.cancel();}
   cancel(){this.player.flight=false;this.player.damage.headImmune=false;this.headTarget=null;this.saw.cancel();this.active=false;this.swing=0;}
@@ -31,26 +32,24 @@ export class WeaponController {
   }
   pose(){return this.saw.pose();}
   private query(){return new CollisionQuery(this.physics,c=>c.isEnabled()&&!c.isSensor()&&c.handle!==this.player.collider.handle&&this.physics.partForCollider(c)?.owner!=='player');}
+  tickProjectiles(dt:number){this.cuts=[];this.physics.world.propagateModifiedBodyPositionsToColliders();this.blastsTick(dt);this.moveGrenades(dt);}
   update(input:InputFrame,dt:number){
-    const shots=this.shots;this.lastBroken=null;this.performUpdate(input,dt);
+    const shots=this.shots;this.lastBroken=null;this.tickProjectiles(dt);const projectileCuts=this.cuts.length;this.performUpdate(input,dt);
     if(!this.limited||!this.active)return;
     const continuous=['saw','svarl','rotor','svarlHead'].includes(this.selected);
-    const wear=this.selected==='launcher'?this.shots-shots:dt*(continuous?4:1.5)+this.cuts.length*2;
+    const wear=this.selected==='launcher'?this.shots-shots:dt*(continuous?4:1.5)+(this.cuts.length-projectileCuts)*2;
     if(this.inventory.use(this.selected,wear)){
       this.lastBroken=this.selected;this.cancel();
-      const next=this.inventory.kinds[0];if(next){this.select(next);this.saw.enabled=true;}else this.saw.enabled=false;
+      const next=this.inventory.kinds.find(kind=>canCarryWeapon(this.player.damage,kind));if(next){this.select(next);this.saw.enabled=true;}else this.saw.enabled=false;
     }
   }
   private performUpdate(input:InputFrame,dt:number){
-    this.cuts=[];this.cooldown=Math.max(0,this.cooldown-dt);this.swing=Math.max(0,this.swing-dt/.3);
-    this.physics.world.propagateModifiedBodyPositionsToColliders();
-    this.blastsTick(dt);this.moveGrenades(dt);
+    this.cooldown=Math.max(0,this.cooldown-dt);this.swing=Math.max(0,this.swing-dt/.3);
     if(input.axis)this.saw.facing=Math.sign(input.axis);
     // A severed arm cannot hold a weapon. Use the surviving arm if possible.
     const arm=(s:number)=>this.player.damage.has(`upperArm${s}`)&&this.player.damage.has(`forearm${s}`);
     if(!arm(this.saw.facing)&&arm(-this.saw.facing))this.saw.facing=-this.saw.facing;
-    const headWeapon=this.selected==='rotor'||this.selected==='svarlHead';
-    this.unavailable=(headWeapon?!this.player.damage.has('head'):!arm(this.saw.facing))||this.player.ragdoll.dead;
+    this.unavailable=!canCarryWeapon(this.player.damage,this.selected)||this.player.ragdoll.dead;
     const melee=this.selected==='axe'||this.selected==='sword';
     this.active=this.enabled&&!this.unavailable&&!!(input.saw||melee&&input.thrust);
     this.refreshHeadProtection(this.active);

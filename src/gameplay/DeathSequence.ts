@@ -1,3 +1,4 @@
+import { CONFIG } from '../core/Config';
 import type { PhysicsManager } from '../physics/PhysicsManager';
 import type { PlayerController } from '../player/PlayerController';
 import type { GoreSystem } from './GoreSystem';
@@ -14,11 +15,17 @@ export function burstPlayer(physics:PhysicsManager,player:PlayerController,gore:
  for(const part of failed){
   const point={...part.body.worldCom()},pose={position:{...part.body.translation()},rotation:{...part.body.rotation()}},density=part.density,limb=part.limb,scale=part.renderScale;
   const halves=[clip(part.poly,vec(1,0,0),-.025),clip(part.poly,vec(-1,0,0),-.025)].filter(p=>p!==null);
-  const chunks=halves.flatMap(poly=>[clip(poly,vec(0,1,0),-.025),clip(poly,vec(0,-1,0),-.025)]).filter((p):p is ConvexPolyhedron=>p!==null&&massProperties(p).volume>.00001);
-  physics.checkGeometryBudget([part.id],chunks);physics.removePart(part.id);
-  gore.burst(point,vec(0,1,0),85);
-  for(const [i,poly]of chunks.entries()){
-   const chunk=physics.createPart(poly,pose,0,0,limb,1,density,'player');chunk.renderScale=scale;
+  let chunks=halves.flatMap(poly=>[clip(poly,vec(0,1,0),-.025),clip(poly,vec(0,-1,0),-.025)]).filter((p):p is ConvexPolyhedron=>p!==null&&massProperties(p).volume>.00001);
+  // A full world must still finish a death. No extra debris allocations beyond
+  // the hard budget; blood remains visible even when no chunk reserve is left.
+  if(physics.parts.size-1+chunks.length>CONFIG.physics.hardLimit)chunks=[];
+  try{physics.checkGeometryBudget([part.id],chunks);}catch(error){if(!String(error).includes('budget'))throw error;chunks=[];}
+  const staged:ReturnType<PhysicsManager['createPart']>[]=[];
+  try{
+   for(const poly of chunks){const chunk=physics.createPart(poly,pose,0,0,limb,1,density,'player',true);chunk.renderScale=scale;staged.push(chunk);}
+  }catch(error){for(const chunk of staged)physics.removePart(chunk.id);throw error;}
+  physics.removePart(part.id);gore.burst(point,vec(0,1,0),85);
+  for(const [i,chunk]of staged.entries()){
    chunk.body.setLinvel(vec(i%2?5:-5,3+i,0),true);chunk.body.setAngvel(vec(0,0,i%2?9:-9),true);
   }
  }

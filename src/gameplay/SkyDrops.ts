@@ -14,11 +14,12 @@ export class SkyDrops {
   if(this.items.length>=16){this.items.shift();this.destroyed++;}
   const item:SkyItem={id:this.nextId++,kind,weapon,position:vec(x,CONFIG.arena.height-.8,0),velocity:vec(0,-2,0),life:kind==='weapon'?28:12,landed:false,spin:0,cooldown:0};this.items.push(item);return item;
  }
- update(physics:PhysicsManager,player:PlayerController,dt:number){
+ update(physics:PhysicsManager,player:PlayerController,dt:number,interact=true){
   const collected:WeaponKind[]=[],bombs:Vec3[]=[],cuts:CutResult[]=[];
   this.items=this.items.filter(item=>{
    item.life-=dt;item.cooldown-=dt;item.spin+=dt*(item.kind==='saw'?30:2);
    if(item.life<=0)return false;
+   if(Math.abs(item.position.x)>CONFIG.arena.width/2||item.position.y<0||item.position.y>CONFIG.arena.height||Math.abs(item.position.z)>CONFIG.arena.depth/2){this.destroyed++;return false;}
    if(!item.landed){
     item.velocity.y-=Math.abs(physics.world.gravity.y)*dt;
     const delta=mul(item.velocity,dt),radius=item.kind==='saw'?.48:item.kind==='scrap'?.4:.3;
@@ -31,12 +32,12 @@ export class SkyDrops {
     }
     item.position=add(item.position,mul(delta,fraction));
     if(hit){
-     if(item.kind==='weapon'){item.position.y+=.06;item.landed=true;}
+     if(item.kind==='weapon'){item.position.y+=.06;item.velocity=vec();item.landed=true;}
      else if(item.kind==='bomb'){bombs.push({...item.position});return false;}
      else{
       const part=physics.partForCollider(hit);
       const playerHit=hit.handle===player.collider.handle||part?.owner==='player';
-      if(playerHit&&item.cooldown<=0){player.damage.hit('chest',item.kind==='saw'?12:8,30);player.knockDownFromAttack(30,8,player.simulationTime);item.cooldown=.6;}
+      if(interact&&playerHit&&item.cooldown<=0){player.damage.hit('chest',item.kind==='saw'?12:8,30);player.knockDownFromAttack(30,8,player.simulationTime);item.cooldown=.6;}
       if(part?.owner==='npc'&&item.kind==='saw'&&item.cooldown<=0){const cut=splitPart(physics,part.id,{...part.body.worldCom()},vec(0,1,0));if(cut)cuts.push(cut);item.cooldown=.15;}
       item.velocity=vec((item.id%2?1:-1)*(item.kind==='saw'?3:1),item.kind==='saw'?2.8:1.2,0);
       item.position.y+=.04;
@@ -47,7 +48,7 @@ export class SkyDrops {
     const support=physics.world.castRay(new RAPIER.Ray(item.position,vec(0,-1,0)),.55,true,undefined,undefined,undefined,undefined,c=>c.handle!==player.collider.handle&&physics.partForCollider(c)?.owner!=='player');
     if(!support)item.landed=false;
    }
-   if(item.kind==='weapon'&&item.weapon){
+   if(interact&&item.kind==='weapon'&&item.weapon){
     const near=length(sub(item.position,player.current))<1.7||player.ragdoll.parts.some(p=>physics.parts.has(p.id)&&length(sub(item.position,p.body.worldCom()))<1.1);
     if(near){collected.push(item.weapon);this.collected++;return false;}
    }
