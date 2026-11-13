@@ -32,6 +32,7 @@ export class PhysicsManager {
   private incoming=new Map<number,{expires:number;entered:boolean}>();
   isPlayerCeiling(collider:RAPIER.Collider){return collider.handle===this.ceilingHandle;}
   registerIncoming(parts:readonly Part[]){for(const part of parts)this.incoming.set(part.id,{expires:this.time+CONFIG.entry.timeout,entered:false});}
+  inheritIncoming(sourceId:number,parts:readonly Part[]){const entry=this.incoming.get(sourceId);if(entry)for(const part of parts)this.incoming.set(part.id,{...entry});}
   impacts=new ImpactEffects();contactLoad=new ContactLoadWindow();contactLoadDiagnosticsEnabled=false;
   world = new RAPIER.World({x:0,y:-9.81,z:0});
   private eventQueue=new RAPIER.EventQueue(true);

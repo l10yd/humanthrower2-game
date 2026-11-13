@@ -250,12 +250,12 @@ export class RetroRenderer {
     panel(0,-.35-30,100,60);panel(0,height+30,100,60);
   }
   private renderSky(){
-    const live=new Set(this.skyDrops.map(i=>i.id));
-    for(const [id,visual]of this.skyVisuals)if(!live.has(id)){this.scene.remove(visual);visual.traverse(o=>{if(o instanceof THREE.Mesh&&o.userData.skyOwned){o.geometry.dispose();(o.material as THREE.Material).dispose();}});this.skyVisuals.delete(id);}
+    const live=new Map(this.skyDrops.map(i=>[i.id,i]));
+    for(const [id,visual]of this.skyVisuals)if(live.get(id)!==visual.userData.skyItem){this.scene.remove(visual);visual.traverse(o=>{if(o instanceof THREE.Mesh&&o.userData.skyOwned){o.geometry.dispose();(o.material as THREE.Material).dispose();}});this.skyVisuals.delete(id);}
     for(const item of this.skyDrops){
       let g=this.skyVisuals.get(item.id);
       if(!g){
-        g=new THREE.Group();g.name=`Sky-${item.kind}-${item.id}`;
+        g=new THREE.Group();g.name=`Sky-${item.kind}-${item.id}`;g.userData.skyItem=item;
         const mesh=(geometry:THREE.BufferGeometry,color:string)=>{const m=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color}));m.userData.skyOwned=true;g!.add(m);return m;};
         if(item.kind==='weapon'||item.kind==='medkit'){
           mesh(new THREE.BoxGeometry(.85,.6,.5),item.kind==='medkit'?'#d9e1d5':'#3c906b');
@@ -317,8 +317,9 @@ export class RetroRenderer {
   }
   render(parts:Iterable<Part>,player:PlayerController,rows:Row[],warningX:number[]|number|null,now:number,alpha:number,saw?:SawController,gore?:GoreSystem,weapons?:WeaponController) {
     this.camera.position.x=Math.sin(now*27)*this.cameraShake;this.camera.position.y=CONFIG.arena.height/2+Math.cos(now*31)*this.cameraShake;
-    this.hazardLane.visible=this.chaosWarning?.kind==='bomb'&&!this.chaosWarning.started;
-    if(this.hazardLane.visible){this.hazardLane.position.x=this.chaosWarning!.x;(this.hazardLane.material as THREE.MeshBasicMaterial).opacity=.1+.08*(.5+.5*Math.sin(now*10));}
+    const incomingBomb=this.skyDrops.find(item=>item.kind==='bomb');
+    this.hazardLane.visible=!!incomingBomb||this.chaosWarning?.kind==='bomb'&&!this.chaosWarning.started;
+    if(this.hazardLane.visible){this.hazardLane.position.x=incomingBomb?.position.x??this.chaosWarning!.x;(this.hazardLane.material as THREE.MeshBasicMaterial).opacity=.1+.08*(.5+.5*Math.sin(now*10));}
     this.renderSky();this.batches.begin();
     const renderStart=performance.now();
     const blood=gore?.mode!=='off',visibleParts=new Map<number,Part>();

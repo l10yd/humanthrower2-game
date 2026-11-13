@@ -42,6 +42,7 @@ export function bitePart(physics:PhysicsManager,id:number,direction:Vec3,depth=.
       }
     }
   }catch(error){for(const j of joints)physics.removeJoint(j.id);for(const p of staged)physics.removePart(p.id);throw error;}
+  physics.inheritIncoming(id,staged);
   physics.removePart(id);physics.world.propagateModifiedBodyPositionsToColliders();
   const wounds:Wound[]=staged.map(p=>{const face=p.poly.faces.at(-1)!;return {partId:p.id,point:mul(face.vertices.reduce(add,vec()),1/face.vertices.length),normal:mul(n,-1)};});
   return {point,normal:mul(normalize(direction),-1),wounds,fragments:staged.length,removedMass:massBefore-staged.reduce((s,p)=>s+p.body.mass(),0),replacement:{sourceId:id,survivorIds:staged.map(p=>p.id)}};
@@ -114,6 +115,7 @@ export function splitPart(physics:PhysicsManager,id:number,point:Vec3,normal:Vec
     physics.world.propagateModifiedBodyPositionsToColliders();throw error;
   }
   const massBefore=old.density*massProperties(old.poly).volume;
+  physics.inheritIncoming(id,staged);
   physics.removePart(id);physics.world.propagateModifiedBodyPositionsToColliders();
   physics.deferDetachedContacts(new Set([old.npcId]),true);
   const wounds=staged.map((p,i)=>{
