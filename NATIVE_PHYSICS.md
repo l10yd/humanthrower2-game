@@ -114,6 +114,14 @@ Newread-onlysourceobserver captures liveCOM-spacejointanchors, pointvelocities/f
 
 New isolated current-contact-anchor Jacobian-arm candidate (no mass/inertia/CCD/contact changes): joint82.824→83.644; thin1465.402→1155.818; exact89.609→89.406. Original20dropv28.319/ω175.343FAIL andKCCseed42missing-supportregression; candidate rejected before naturalruns. Contact source restored/hash`1392f0c5…`; worker/solve/observer baseline hashes unchanged, public npm package untouched. Manifests/artifacts `.pi/native-build/mvp4-anchor-*`, independent analyzer `scripts/native-substep-analysis.mjs`, selected immutable fixture `tests/fixtures/native-substep-convergence.json` +3unit gates. Production buildPASS,431/432unitPASS(oneoriginalangularFAIL), lastfullbrowser125/126(oneangularFAIL)notrerunforresearch-onlystage.
 
+## Checkpoint6 decision boundary: impulse + global convergence rejected
+
+[docs/MVP_CHECKPOINT_6.md](docs/MVP_CHECKPOINT_6.md) records archived impulse-step+PGS1/4/8/16 observer-neutral replays. PGS4jointworldω30,98passes35locally, but unchanged20dropω90,84fails andKCC17/42requiredsupportfails; thinworldv59,99already presentstillfails25. No newnativepatch/sourcechange/adoption. Git-visible fixture `impulse-convergence-rejection.json` prevents treating localreplayPASSasworldacceptance. Selected architecture: preserveexacttinygeometry/masses/inertia, no hiddenproxy/clamp/sleep/cull; pinnedpublicproduction remains unstable/no-go pendingisolatedCPUenginecomparison orseparatelyapprovedpolicychange. Worker separateperformanceproblem. Explicitthinacceptancetestnowredinordinaryunitgates.
+
+## Checkpoint8 isolated Joltcomparison — rejected, productionunchanged
+
+Jolt1.1.1tarballverifiedSHA512inignored`.pi/engine-comparison`, no dependencyinstall/lockchange. JSgitHeadcccf9d…pinnedCMake native6f8bc72…; read-onlysourcesnotrebuildattestation. Normal20drop numericlimitsviaSixDOFpyramid(notRapierangularcoordinateequivalence), nativeinertiapreserved:ω88–93rad/s/drift.20–.25mFAIL. Tinyautomaticmassassignmentreplacesnearzeroinertiawithsphere-radius1tensor.4mass; lowω2.826isfalsepositiveforexactcontract. Explicitnativeprincipal/frameω1069.759, geometryexacttensorω713.562FAIL35. FullKCC/natural/102snapshotmigrationnotrunafterearlyfailure. Evidence`jolt-comparison-rejection.json`+3tests; noJoltshippingdependency. [docs/MVP_CHECKPOINT_8.md](docs/MVP_CHECKPOINT_8.md).
+
 ## Historical build prerequisites (before operator approval)
 
 No `cargo`, `rustc`, `wasm-pack` found on PATH or standard user Rust directories. No Rust toolchain / global npm build dependencies were installed. The original GitHub workflow uses Ubuntu/macOS and builds six compat variants; it does not pin a Rust compiler in the workflow. Generated project installs are not a claim of hermetic reproducibility.

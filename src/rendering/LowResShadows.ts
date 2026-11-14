@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { partTransformMaterial } from './PartBatches';
 export type ShadowSize=0|128|256|512;
 /** One hard nearest-sampled shadow, in stable world/light coordinates. This is
  * actual occluder depth, not a blob or a screen-space darkening overlay. */
@@ -17,6 +18,7 @@ export class LowResShadows {
  readonly camera=new THREE.OrthographicCamera(-6.4,6.4,8.6,-8.6,.1,50);
  private scene=new THREE.Scene();private attached=new WeakSet<THREE.Material>();private proxies=new Map<THREE.Mesh,THREE.Mesh>();
  private depth=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,side:THREE.DoubleSide});
+ private transformedDepth=partTransformMaterial(this.depth);
  private fallback=new THREE.DataTexture(new Uint8Array([255,255,255,255]),1,1);
  target:THREE.WebGLRenderTarget|null=null;size:ShadowSize=256;private disposed=false;
  readonly uniforms={uShadowEnabled:{value:0},uShadowMap:{value:null as THREE.Texture|null},uShadowMatrix:{value:new THREE.Matrix4()},uShadowBias:{value:.0007},uShadowStrength:{value:.38}};
@@ -53,10 +55,12 @@ export class LowResShadows {
   if(!this.target){this.target=new THREE.WebGLRenderTarget(this.size,this.size,{minFilter:THREE.NearestFilter,magFilter:THREE.NearestFilter,generateMipmaps:false});this.target.texture.colorSpace=THREE.NoColorSpace;}
   source.updateMatrixWorld(true);const alive=new Set<THREE.Mesh>();let casters=0;
   source.traverseVisible(object=>{if(object instanceof THREE.Mesh&&object.castShadow){
-   const instanced=object instanceof THREE.InstancedMesh;casters+=instanced?object.count:1;
+   const instanced=object instanceof THREE.InstancedMesh;casters+=instanced?object.count:object.userData.partCount??1;
    alive.add(object);let proxy=this.proxies.get(object);
    if(!proxy){proxy=instanced?new THREE.InstancedMesh(object.geometry,this.depth,object.instanceMatrix.count):new THREE.Mesh(object.geometry,this.depth);proxy.matrixAutoUpdate=false;this.proxies.set(object,proxy);this.scene.add(proxy);}
    if(instanced&&proxy instanceof THREE.InstancedMesh){proxy.instanceMatrix=object.instanceMatrix;proxy.count=object.count;proxy.frustumCulled=false;}
+   if(object.userData.partTransforms)proxy.frustumCulled=false;
+   proxy.material=object.userData.partTransforms?this.transformedDepth:this.depth;
    proxy.geometry=object.geometry;proxy.matrix.copy(object.matrixWorld);proxy.matrixWorldNeedsUpdate=true;
   }});
   this.casters=casters;
@@ -71,5 +75,5 @@ export class LowResShadows {
  }
  private clearProxies(){for(const proxy of this.proxies.values())if(proxy instanceof THREE.InstancedMesh)proxy.dispose();this.scene.clear();this.proxies.clear();this.casters=0;}
  get snapshot(){return {size:this.size,allocatedSize:this.target?.width??0,casters:this.casters,groups:this.proxies.size,drawCalls:this.drawCalls,triangles:this.triangles,submissionMs:this.submissionMs,passes:this.passes};}
- dispose(){if(this.disposed)return;this.disposed=true;this.target?.dispose();this.target=null;this.clearProxies();this.depth.dispose();this.fallback.dispose();this.uniforms.uShadowEnabled.value=0;this.uniforms.uShadowMap.value=null;}
+ dispose(){if(this.disposed)return;this.disposed=true;this.target?.dispose();this.target=null;this.clearProxies();this.depth.dispose();this.transformedDepth.dispose();this.fallback.dispose();this.uniforms.uShadowEnabled.value=0;this.uniforms.uShadowMap.value=null;}
 }

@@ -1,14 +1,24 @@
 # Новый контракт и план MVP: default chaos demo
 
 **Область:** `demo` + `twitch`, без вставания/охоты NPC.<br>
-**Текущие правила рекордов:** `3.8-acid-pile-event`.
+**Текущие правила рекордов:** `3.9-dynamic-destination-recovery`.
 
-**Последнее изменение пользователя:** остановить solver R&D, добавить видимое кислотное событие и опубликовать текущую демку. Кислота eligible при≥100physicsparts, предупреждение2с, rising/draining8с, maxheight1,6м; submerged debris растворяются без новых fragments, игрок повреждается. Это явное исключение сохранения частей — gameplay event, не hiddenperformanceculling. MVP gates всё ещё открыты.<br>
+**Последнее изменение пользователя:** продолжать оставшеесяA–C, включаяC; Dне выполнять. Кислотное событие из предыдущего релиза сохранено: Кислота eligible при≥100physicsparts, предупреждение2с, rising/draining8с, maxheight1,6м; submerged debris растворяются без новых fragments, игрок повреждается. Это явное исключение сохранения частей — gameplay event, не hiddenperformanceculling. MVP gates всё ещё открыты.<br>
 **Статус:** MVP в работе, не принят. Блокирующие stability/device/performance gates не заменяются зелёным demo smoke.
 
 Этот документ — актуальный контракт для дальнейшей работы. `GDD.md`/`TDD.md` остаются источниками принципов и строгих технических проверок; их исторические runtime-значения не должны отменять описанный здесь default. Исходная ревизия: [DEMO_AUDIT.md](DEMO_AUDIT.md).
 
-**Current checkpoint4:** [MVP_CHECKPOINT_4.md](MVP_CHECKPOINT_4.md). Native observer/convergence analysis completed; one current-anchor candidate rejected by unchanged world gates and source restored. Production unchanged; build PASS, **431/432 unit PASS**, remaining original angular failure. Last full browser checkpoint3 **125/126**, not rerun for research-only stage.
+**Текущее продолжение:** [MVP_CHECKPOINT_10.md](MVP_CHECKPOINT_10.md): исправлен partial ejection island сfixed/kinematic member (joint/snapshot retained); natural seed93 captured7part/13pathblockers, boundedcoordinatedplanner1999work/17,6мс/no plan→notadopted. **BuildPASS,481/483unitPASS,129/130freshbrowserPASS**, strictphysics/latebudget/fullpathstillopen;Dnotrun.
+
+**Предыдущее продолжение:** [MVP_CHECKPOINT_9.md](MVP_CHECKPOINT_9.md): sharedgeometryreadчерезallocationbudget/validation/colliderstage; synthetic32→64clearmean4,90→3,26мс/rawsnapshotsame. Singlepassstatistics/spansvalidatedbutdefaultOFFпоnaturalmeasurements. **BuildPASS,470/472unitPASS,129/130freshfullbrowserPASS**, strictphysicsremaining; latebudget/pathopen,Dnotrun.
+
+**Предыдущее продолжение:** [MVP_CHECKPOINT_8.md](MVP_CHECKPOINT_8.md): isolatedJolt1.1.1comparisonrejected (normalω88–93/drift.20–.25, nativeexacttinyω1069); automatic tinyinertiaspherefallbackrefuted. Operation-scopedGeometryReadaccepted/pairedoccupancymean4,63→3,95мс, mapsame. **BuildPASS,463/465unitPASS,129/130freshfullbrowserPASS**, onlystrictstabilityfailures. A–Cnotaccepted,Dnotrun; productionRapierunchanged.
+
+**Предыдущее продолжение:** [MVP_CHECKPOINT_7.md](MVP_CHECKPOINT_7.md): pure row preparation + opt-in Float64Worker (defaultOFF после1hit/303misses), exact-repeat welding/scalar mass arithmetic/shared occupancy transforms, full islandpathveto rejected поnaturalQTEgate. BuildPASS,458/460unitPASS;128/130fullbrowserдоbannerfix, warningthen4targetedPASS. Stablephysics/latebudget/fullpathremainopen;Dnotrun.
+
+**Предыдущий проход A–C:** [MVP_CHECKPOINT_6.md](MVP_CHECKPOINT_6.md): unique hull scene/shadow batching, bounded HUD cadence, dynamic recovery destination checks + explicit blocked stroke, actual hardware RAF stress и bounded impulse/convergence rejection. **A–C не полностью закрыты; D не выполнялся.** Production Rapier unchanged. Final **447/449unitPASS**, failing original angular + new whole-world thin; last full browser **126/128PASS**, ragdoll test then deterministic3/3targetedPASS (full not rerun). Demo30unit+20browserPASS, performance2PASS. Строгие normal и thin gates остаются красными, NO-GO для stability acceptance.
+
+**Предыдущий checkpoint4:** [MVP_CHECKPOINT_4.md](MVP_CHECKPOINT_4.md). Native observer/convergence analysis completed; one current-anchor candidate rejected by unchanged world gates and source restored. Production unchanged; build PASS, **431/432 unit PASS**, remaining original angular failure. Last full browser checkpoint3 **125/126**, not rerun for research-only stage.
 
 Предыдущий поздний CPU этап и полные gates: [MVP_CHECKPOINT_3.md](MVP_CHECKPOINT_3.md). Предыдущие checkpoints ниже — история.
 
@@ -36,8 +46,8 @@
 3. Fixed geometry, включая неподвижную низкую крышу, может блокировать выбор destination. После освобождения statics recovery продолжается.
 4. Мешающие dynamic NPC islands переводятся целиком в проверенное конечное место с bounded ejection speed 7 м/с. Не удаляются, не разрываются суставы, не меняются массы/геометрия.
 5. Все перемещаемые группы должны укладываться в x/y/z границы чаши, включая верх.
-6. Это destination-clearance arcade translation, **не непрерывный physical sweep через динамическую кучу**. Полная dynamic-overlap/path safety пока остаётся отдельным открытым gate; не выдаём текущую реализацию за его прохождение.
-7. После deadline — возврат к KCC/ходьбе, с retained geometry. Новый удар после grace открывает новый QTE.
+6. Это destination-clearance arcade translation, **не непрерывный physical sweep через динамическую кучу**. Конечные poses теперь проверяются против других dynamic/kinematic тел и ранее перемещённых islands; если destination нет, straightening/handoff блокируются с сохранённым win. Полный dynamic path/angular sweep остаётся открытым gate.
+7. После активной секунды straightening — возврат к KCC/ходьбе, с retained geometry. Verified no-destination blocking приостанавливает stroke clock на fixed ticks; `recoveryBlockedSeconds` отдельно от active duration. Новый удар после grace открывает новый QTE.
 8. Нефатальный row cut во время win сохраняет выигрыш и исходный deadline, но не отращивает ткань.
 9. Ни clocks, ни FPS машины не определяют порядок поисковых кандидатов/исход восстановления.
 
@@ -63,23 +73,27 @@
 - [x] Первичные invocation tails измерены новым production runner: solver p95 ~18–18,6 мс в последних 600 ticks, squeeze p95 ~7,2–10,1 мс, rowClear до ~22,8 мс. Цели ещё не приняты; подробности [MVP_PROGRESS.md](MVP_PROGRESS.md).
 - [x] Body decals объединены в один dynamic draw buffer; сохраняются clipping, drying, transforms, порядок пятен и diagnostic unbatched path. 64 пятна: −63 draw calls, pixel comparison PASS; unchanged poses/ages не загружают buffers повторно.
 - [x] Occupancy half-space fast path сохраняет predicates/clipping и exact карты, уменьшает повторную welding работу. На том же 30s seed17 occupancy mean 0,673→0,432 мс/tick (ticks без rebuild включены), p95 5,3→3,5 мс. Actual invocation p95 после оптимизации всё ещё ~7 мс в 60s сессии.
-- [ ] Дальнейшее уменьшение unique-fragment scene/shadow calls; current frozen 30s total 364 всё ещё выше ориентира <180.
+- [x] Colliderallocationgeometryreadsharedthroughbudget/validation/coordinates/stagedclear, finalbudgets/rollbackunchanged; same32partclear→64survivorsmean4,90→3,26мс. Naturalmax8,9–9,3мсstillabove8target(checkpoint9).
+- [x] Read-onlyoperationGeometryReadreusesexactweldingwithinoccupancy/rowpreparation, noacross-tickmutablecache; pairedfrozenmean4,63→3,95мс/mapexact. Naturalp95~3,7мсstill>2target; checkpoint8.
+- [x] Дальнейшее уменьшение unique-fragment scene/shadow calls: exact transform batching, pixel/depth/snapshot checks; current paired frozen30s434→108total, те же170physics parts+11player visuals/triangles. Старые364calls — другой historical snapshot.
 - [x] Squeeze/recovery sweep: pure translation не запускает13angularcasts из-заfloat32 quaternion norm; точные translational bounds; один recoveryTarget barrier вместо12 full scans.
 - [x] Clear: далёкие meaningful parts отсекаются доslab/weld, survivor collider готовится один раз; late preparation rollback и original dust semantics сохранены.
 - [x] Paired diagnostics checkpoint3: squeeze p95 7,2→4,7 /10,1→7,2мс; clear mean18,7→14,6 /14,2→7,0мс. Общий late fixedTotal не имеет значительного выигрышa — solver доминирует.
-- [ ] Убрать лишнее DOM/global statistics обновление на каждом RAF.
+- [x] Убраны heavy DOM updates на каждом RAF: HUD30Hz/state-change refresh after scene render; normal HUD не собирает sleeping global stats.
 - [x] Production diagnostic runner `npm run profile:default` пишет rolling per-invocation timings, 10s checkpoints, active/sleeping/geometry/gore/render данные, имеет `finally` cleanup. Не FPS/reference acceptance.
-- [ ] Полный default-art stress с аппаратным FPS, контактными islands и droppedTime acceptance.
-- [ ] При необходимости вынести pure geometry или весь simulation в Worker, а не GPU rewrite.
+- [ ] Полный default-art stress с аппаратным FPS, контактными islands и droppedTime acceptance. Новый production real-RAF runner измерен наRyzen5600/RTX5070Ti: первыйrun59,57/59,89FPS/droppedTime0, повторный215,18/224,49RAF/droppedTime0/0,0209с (display/browser scheduling разный). Обаcensoredдо60s/strict25/35FAIL; late physics p95до8,2мс, неaccepted.
+- [ ] Worker adoption дляpure geometry/всегоsimulation по измеренной пользе. Реализован opt-in`?geometry-worker` Float64prepare/versionedexactcommitfallback; active natural1hit/303misses → defaultOFF, не performanceacceptance. См.checkpoint7.
 
 ### Этап C — физическая устойчивость
 
-- [ ] Сохранить original `<25 m/s / <35 rad/s` строгие gates без ослабления.
+- [x] Original `<25 m/s / <35 rad/s` gates сохранены без ослабления; добавлен whole-world thin acceptance в обычный unit/check/MVP gate. **Прохождение всё ещё FAIL**, не закрытая stability.
 - [x] Bounded native checkpoint4: fresh exact observer baseline, независимые substep equations, PGS experiment и один current-anchor candidate; world regressions → rejected/restored. Не является physics fix.
-- [ ] Следующий bounded spike thin impulse/integration + joint/contact global convergence или явная архитектурная развилка. Не повторять rejected patches.
-- [ ] Принять явное решение по extreme thin fragments, если strict exact-physics не решается в budget.
-- [ ] Не маскировать explosions culling/clamps/fake sleep.
-- [ ] Открытая проверка dynamic placement safety forced recovery.
+- [x] Следующий bounded spike thin impulse/integration + global convergence: archived impulse-step+PGS4one-stepjointPASS, но original20dropω90,84FAIL/KCC17/42supportFAIL; rejected. Явная архитектурная развилка NO-GO/pinned baseline + isolated CPUengine comparison описана вcheckpoint6; новый engine пока не выбран/не внедрён.
+- [x] Первый isolatedCPUenginecomparison completed: Jolt1.1.1nativeprincipal/tensorpreserved/normal20drop иcapturedthinFAIL; automaticnearzeroinertiafallbackisnotstability. Joltнеadopted, exactcontract/stabilitygateopen(checkpoint8).
+- [x] Явное решение по extreme thin fragments: exact survivors/массы/inertia сохраняются, proxy/culling/clamps не внедряются без отдельного согласования; stable MVP blocked до solver/engine fix.
+- [x] Explosions не маскируются culling/clamps/fake sleep; strict red tests остаются в ordinary gates.
+- [x] Целостность recovery island: если связный member fixed/kinematic/disabled/sensor, dynamic subset не перемещается, IDs/joints/snapshot сохранены; red→green regression(checkpoint10).
+- [ ] Полная dynamic placement/path safety forced recovery. **Endpoint checks реализованы**: islands/dynamic/kinematic/containment/no-destination pause; fulltranslationveto experimentblockednaturalseed93win→rejected/restored, continuous/angular/staticpathнепринят. Coordinatedwhole-islandclosurecandidateнеadopted: seed93barrier13blockers/1999work/exhausted≈17,6мс, notproofnoroute(checkpoint10).
 
 ### Этап D — public acceptance
 
@@ -100,10 +114,15 @@ npm run test:demo
 npm run test:performance
 npm run test:mvp
 npm run profile:default -- test-results/default-profile.json
+npm run profile:geometry -- test-results/geometry-profile.json
+npm run profile:stress -- test-results/default-stress.json
+npm run test:stability
 ```
 
 - `test:demo` проверяет mechanics/smoke, не строгую стабильность и не reference FPS.
 - `test:performance` проверяет bounded workload и публикует timings; headless SwiftShader не объявляется real-device GPU acceptance.
+- `profile:stress` = production actualRAF/render/contact graph, software по умолчанию; `HUMANTHROWER_STRESS_HARDWARE=1` — headed localGPU measurement. Return1 при failed/open local gates; `accepted:false` до GPU/reference acceptance. Это не этапD/device matrix.
+- `test:stability` включает unchanged20drop и whole-world thin strict25/35; causal replay/evidence PASS не заменяет их.
 - `test:mvp` = общий unit/physics/build gate, затем полный browser suite. **Он не должен стать зелёным за счёт исключения angular failure.**
 - Unit concurrency ограничено двумя workers, чтобы дорогое surface certification/physics не конкурировало десятками процессов. Таймауты/численные thresholds не увеличены.
 

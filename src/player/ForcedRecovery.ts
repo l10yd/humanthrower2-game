@@ -1,7 +1,7 @@
 import { CONFIG } from '../core/Config';
 import { RAPIER, type PhysicsManager, type Part } from '../physics/PhysicsManager';
-import { shapeBounds, overlaps, type Bounds } from './QueryBounds';
-import { add, identity, mul, vec, type Vec3, type Quat } from '../slicing/Math';
+import { CollisionQuery, shapeBounds, overlaps, type Bounds } from './QueryBounds';
+import { add, identity, mul, normalize, vec, type Vec3, type Quat } from '../slicing/Math';
 export interface RecoveryVolume {shape:RAPIER.Shape;position:Vec3;rotation:Quat}
 interface DebrisPose {part:Part;shape:RAPIER.Shape;position:Vec3;rotation:Quat;bounds:Bounds|null}
 const shifted=(b:Bounds,delta:Vec3):Bounds=>({min:add(b.min,delta),max:add(b.max,delta)});
@@ -10,13 +10,13 @@ const shifted=(b:Bounds,delta:Vec3):Bounds=>({min:add(b.min,delta),max:add(b.max
  * No deletion, severing, wall exemption or change to mass/joints. */
 export function ejectRecoveryDebris(physics:PhysicsManager,volumes:RecoveryVolume[],center:Vec3):number {
  const metrics=physics.recoveryQueries;
- metrics.scannedParts=metrics.candidateParts=metrics.narrowTests=metrics.searchCandidates=metrics.movedIslands=0;
+ metrics.scannedParts=metrics.candidateParts=metrics.narrowTests=metrics.searchCandidates=metrics.movedIslands=metrics.blockedIslands=0;
  if(!volumes.length)return 0;
  const clearance=CONFIG.forcedRecovery.clearance;
  const targets=volumes.map(volume=>({...volume,bounds:shapeBounds(volume.shape,volume.position,volume.rotation)}));
  const statics:{collider:RAPIER.Collider;bounds:Bounds|null}[]=[];
  physics.world.forEachCollider(c=>{
-  if(c.isEnabled()&&!c.isSensor()&&!c.parent()?.isDynamic()&&!physics.partForCollider(c)&&!c.parent()?.isKinematic())
+  if(c.isEnabled()&&!c.isSensor()&&!c.parent()?.isDynamic()&&!c.parent()?.isKinematic())
    statics.push({collider:c,bounds:shapeBounds(c.shape,c.translation(),c.rotation())});
  });
  // One pose/shape read per relevant part. Exact WASM contacts only follow cheap
@@ -46,19 +46,38 @@ export function ejectRecoveryDebris(physics:PhysicsManager,volumes:RecoveryVolum
   if(pose.bounds&&targets.every(v=>v.bounds&&!overlaps(pose.bounds!,v.bounds,clearance)))continue;
   metrics.candidateParts++;
   if(!intersects(pose,vec()))continue;
-  const group=physics.connectedParts(part.id).filter(p=>p.owner==='npc'&&p.body.isDynamic()).map(poseFor);
-  for(const member of group)visited.add(member.part.id);
+  const connected=physics.connectedParts(part.id);
+  for(const member of connected)visited.add(member.id);
+  // A jointed island is indivisible. Filtering out an anchored/disabled member
+  // then translating the dynamic subset stretches its retained joint graph.
+  if(connected.some(p=>p.owner!=='npc'||!p.body.isDynamic()||!p.collider.isEnabled()||p.collider.isSensor())){metrics.blockedIslands++;continue;}
+  const group=connected.map(poseFor);
   const side=Math.sign(part.body.worldCom().x-center.x)||((part.npcId%2)?1:-1);
   const directions=[vec(side,0,0),vec(-side,0,0),vec(0,1,0),vec(0,0,1),vec(0,0,-1)];
   const originalContacts=group.map(p=>statics.map(c=>{
    if(p.bounds&&c.bounds&&!overlaps(p.bounds,c.bounds,0))return 0;
    metrics.narrowTests++;return c.collider.contactCollider(p.part.collider,0)?.distance??0;
   }));
+  const members=new Set(group.map(p=>p.part.collider.handle));
+  // Rebuild after each moved island: previous translations must participate in
+  // the next destination search. The read barrier never crosses a world edit.
+  const dynamicQuery=new CollisionQuery(physics,c=>c.isEnabled()&&!c.isSensor()&&!!c.parent()&&!c.parent()!.isFixed()&&!members.has(c.handle));
+  const feasible:{min:Vec3;max:Vec3}={min:vec(),max:vec()};
+  for(const key of ['x','y','z'] as const){
+   const lower=key==='x'?-CONFIG.arena.width/2+.005:key==='y'?-.01:-CONFIG.arena.depth/2+.005;
+   const upper=key==='x'?CONFIG.arena.width/2-.005:key==='y'?CONFIG.arena.height-.005:CONFIG.arena.depth/2-.005;
+   feasible.min[key]=lower-Math.min(...group.map(p=>p.bounds?.min[key]??-Infinity));
+   feasible.max[key]=upper-Math.max(...group.map(p=>p.bounds?.max[key]??Infinity));
+  }
   let escape:Vec3|null=null,direction:Vec3|null=null;
   // Preserve deterministic candidate order. Work is geometry-dependent, never
   // limited by wall-clock time (which would make recovery hardware-dependent).
   search:for(let distance=.2;distance<=CONFIG.arena.height;distance+=.2)for(const axis of directions){
-   metrics.searchCandidates++;const delta=mul(axis,distance);
+   metrics.searchCandidates++;let delta=mul(axis,distance);
+   // Settled rotated hull AABBs can slightly cross a wall/floor already. An
+   // axis-only translation cannot repair that, even when there is ample space.
+   // Project each candidate into the whole island's feasible containment box.
+   for(const key of ['x','y','z'] as const)delta[key]=Math.max(feasible.min[key],Math.min(feasible.max[key],delta[key]));
    if(group.some(p=>{
     if(!p.bounds)return true;const b=shifted(p.bounds,delta);
     return b.min.x<-CONFIG.arena.width/2+.005||b.max.x>CONFIG.arena.width/2-.005||b.min.z<-CONFIG.arena.depth/2+.005||b.max.z>CONFIG.arena.depth/2-.005||b.min.y<-.01||b.max.y>CONFIG.arena.height-.005;
@@ -70,9 +89,18 @@ export function ejectRecoveryDebris(physics:PhysicsManager,volumes:RecoveryVolum
     const hit=c.collider.contactShape(p.shape,add(p.position,delta),p.rotation,0);
     return !!hit&&hit.distance<Math.min(0,originalContacts[i][j])-.002;
    })))continue;
-   escape=delta;direction=axis;break search;
+   if(group.some(p=>{
+    const bounds=p.bounds&&shifted(p.bounds,delta);
+    return dynamicQuery.nearby(bounds).some(c=>{
+     metrics.narrowTests++;
+     const hit=c.contactShape(p.shape,add(p.position,delta),p.rotation,0);
+     return !!hit&&hit.distance<-.002;
+    });
+   }))continue;
+   if(physics.recoveryTranslationCheck&&!physics.recoveryTranslationCheck(group.map(p=>p.part),delta,volumes,center))continue;
+   escape=delta;direction=normalize(delta);break search;
   }
-  if(!escape||!direction)continue;
+  if(!escape||!direction){metrics.blockedIslands++;continue;}
   for(const pose of group){
    pose.position=add(pose.position,escape);if(pose.bounds)pose.bounds=shifted(pose.bounds,escape);
    pose.part.body.setTranslation(pose.position,true);

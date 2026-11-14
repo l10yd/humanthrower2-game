@@ -16,7 +16,7 @@ test('batching preserves textured pixels, shadow depth, caps, blood and physical
    let changed=0,max=0,depthChanged=0,depthMax=0;for(let i=0;i<on.pixels.length;i++){const d=Math.abs(on.pixels[i]-off.pixels[i]);if(d)changed++;max=Math.max(max,d);}for(let i=0;i<on.depth.length;i+=4){if([0,1,2,3].some(j=>on.depth[i+j]!==off.depth[i+j]))depthChanged++;const unpack=(a:Uint8Array)=>a[i]/256+a[i+1]/65536+a[i+2]/16777216+a[i+3]/4278190080;depthMax=Math.max(depthMax,Math.abs(unpack(on.depth)-unpack(off.depth)));}
    rows.push({intensity,changed,max,depthChanged,depthMax,offCalls:offStats.totalCalls,onCalls:r.renderStats.totalCalls,trianglesEqual:offStats.sceneTriangles===r.renderStats.sceneTriangles&&offStats.shadowTriangles===r.renderStats.shadowTriangles});
   }
-  const unchanged=physics.every((v,i)=>v===g.physics.world.takeSnapshot()[i]);
+  const after=g.physics.world.takeSnapshot(),unchanged=physics.every((v,i)=>v===after[i]);
   const chest=[...g.physics.parts.values()].find(p=>p.limb==='chest')!;const result=splitPart(g.physics,chest.id,chest.body.translation(),{x:0,y:1,z:0});if(result)g.gore.cut(result,g.physics);
   for(const blood of ['full','off'] as const){g.gore.configure(blood);for(const retro of [true,false]){r.retro=retro;draw();}}
   const afterCut={...r.batches.snapshot};const identities=[...g.physics.parts.keys()];g.restart();draw();const afterRestart={...r.batches.snapshot};
@@ -25,6 +25,36 @@ test('batching preserves textured pixels, shadow depth, caps, blood and physical
  console.log(JSON.stringify({batchPixels:report}));
  for(const row of report.rows){expect(row.trianglesEqual).toBe(true);expect(row.onCalls).toBeLessThan(row.offCalls);expect(row.max).toBeLessThanOrEqual(1);expect(row.depthMax).toBeLessThan(1e-6);}
  expect(report.unchanged).toBe(true);expect(report.afterCut.instances).toBeGreaterThan(20);expect(report.afterRestart.instances).toBe(0);expect(report.error).toBe(0);expect(errors).toEqual([]);
+});
+
+test('unique cut hulls share scene and shadow calls with exact pixels and no repeated frozen transform uploads',async({page})=>{
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+ await page.goto('/?variants=off');await expect(page.locator('#start')).toBeEnabled();
+ const report=await page.evaluate(async()=>{
+  // @ts-expect-error Vite fixture
+  const {splitPart}=await import('/src/slicing/Dismemberment.ts');
+  const g=window.humanthrower,r=g.renderer;g.pause();r.configure({resolution:'320x240'});
+  for(let i=0;i<4;i++)g.factory.spawn('normal',{x:(i%4-1.5)*1.8,y:3,z:0},{x:0,y:0,z:Math.sin(i*.025),w:Math.cos(i*.025)},false,{velocity:{x:0,y:0,z:0}});
+  for(const p of [...g.physics.parts.values()].filter(p=>p.limb==='chest'||p.limb==='pelvis')){
+   const result=splitPart(g.physics,p.id,p.body.translation(),{x:.2+p.npcId*.017,y:1,z:.13});if(result)g.gore.cut(result,g.physics);
+  }
+  const before=g.physics.world.takeSnapshot(),rows=[];
+  const read=()=>{
+   r.render(g.physics.parts.values(),g.player,g.detector.rows,[],1.3,1,g.saw,g.gore,g.weapons);
+   if(!r.retro){r.renderer.setRenderTarget(r.target);r.renderer.render(r.scene,r.camera);r.renderer.setRenderTarget(null);}
+   const pixels=new Uint8Array(320*240*4),depth=new Uint8Array(256*256*4);r.renderer.readRenderTargetPixels(r.target,0,0,320,240,pixels);r.renderer.readRenderTargetPixels(r.shadows.target!,0,0,256,256,depth);return {pixels,depth};
+  };
+  for(const retro of [true,false])for(const blood of ['full','off'] as const){
+   g.gore.configure(blood);r.retro=retro;r.batches.enabled=false;const off=read(),calls=r.renderStats.totalCalls;
+   r.batches.enabled=true;const on=read(),batch={...r.batches.snapshot};read();const frozen=r.batches.snapshot.transformUploads;
+   let max=0,depthMax=0;for(let i=0;i<on.pixels.length;i++)max=Math.max(max,Math.abs(on.pixels[i]-off.pixels[i]));
+   for(let i=0;i<on.depth.length;i+=4){const unpack=(a:Uint8Array)=>a[i]/256+a[i+1]/65536+a[i+2]/16777216+a[i+3]/4278190080;depthMax=Math.max(depthMax,Math.abs(unpack(on.depth)-unpack(off.depth)));}
+   rows.push({retro,blood,max,depthMax,calls,onCalls:r.renderStats.totalCalls,batch,frozen});
+  }
+  const after=g.physics.world.takeSnapshot(),unchanged=before.every((v,i)=>v===after[i]);g.dispose();return {rows,unchanged};
+ });
+ for(const row of report.rows){expect(row.batch.unique).toBeGreaterThan(10);expect(row.onCalls).toBeLessThan(row.calls);expect(row.max).toBeLessThanOrEqual(1);expect(row.depthMax).toBeLessThan(1e-6);expect(row.frozen).toBe(0);}
+ expect(report.unchanged).toBe(true);expect(errors).toEqual([]);
 });
 
 test('20 NPC plus 120 sleeping parts meet draw-call fixture budget without changing represented geometry',async({page})=>{

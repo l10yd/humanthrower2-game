@@ -12,7 +12,7 @@ test('session seed is reproducible, affects natural drop plans, persists across 
  });
  expect(r).toEqual({same:true,different:true,persisted:42,invalidUnchanged:true,errors:4});
 });
-test('natural saw seed93 completes won QTE deadlines; a lethal row may abort a later recovery',async({page},testInfo)=>{
+test('natural saw seed93 obeys active won-stroke deadline, pauses only for verified placement blocking, and allows lethal row abort',async({page},testInfo)=>{
  test.setTimeout(90000);await page.goto('/');await expect(page.locator('#start')).toBeEnabled();
  const r=await page.evaluate(async()=>{
   // @ts-expect-error Vite module URL
@@ -21,5 +21,5 @@ test('natural saw seed93 completes won QTE deadlines; a lethal row may abort a l
  });
  await testInfo.attach('natural-qte.json',{body:JSON.stringify(r,null,2),contentType:'application/json'});
  expect(r.error).toBeNull();expect(r.numericFaults).toBe(0);expect(r.rows).toBeGreaterThan(0);expect(r.recoveries.length).toBeGreaterThan(0);expect(r.abortedRecoveries.every((a:{cause:string})=>a.cause==='defeat')).toBe(true);
- for(const recovery of r.recoveries)expect(recovery.seconds).toBeLessThanOrEqual(1+1/60);
+ for(const recovery of r.recoveries){expect(recovery.blockedSeconds).toBeGreaterThanOrEqual(0);expect(recovery.seconds-recovery.blockedSeconds).toBeLessThanOrEqual(1+1/60);}
 });

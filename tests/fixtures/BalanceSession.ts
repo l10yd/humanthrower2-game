@@ -25,7 +25,8 @@ export function runBalanceSession(g:Game,seed:number,policy:BalancePolicy,maxSec
  };
  let maxParts=0,maxPending=0,downTicks=0,buriedTicks=0,weaponTicks=0,warnings=0,weaponCuts=0,blockedTicks=0;
  let readyAt:number|null=null,seenReady=false,completed=g.player.qte.escapes,lastRows=0,lastDrops=0,lastKnockdowns=0;
- const recoveries:{filledAt:number;handedOffAt:number;seconds:number;mobility:string}[]=[],unresolved:number[]=[],recoveryTrace:unknown[]=[],abortedRecoveries:{filledAt:number;time:number;cause:string}[]=[];
+ let readyBlocked=0;
+ const recoveries:{filledAt:number;handedOffAt:number;seconds:number;blockedSeconds:number;mobility:string}[]=[],unresolved:number[]=[],recoveryTrace:unknown[]=[],abortedRecoveries:{filledAt:number;time:number;cause:string}[]=[];
  const samples:{time:number;state:string;drops:number;rows:number;parts:number;health:number;air:number;down:boolean;qte:number}[]=[],rowEvents:{time:number;rows:number}[]=[],dropTimes:number[]=[];
  const state=():GameState=>g.state;
  const seconds=Math.ceil(maxSeconds/CONFIG.dt),start=performance.now();let error:string|null=null;
@@ -39,13 +40,13 @@ export function runBalanceSession(g:Game,seed:number,policy:BalancePolicy,maxSec
    if(g.rows>lastRows){rowEvents.push({time:g.now,rows:g.rows-lastRows});lastRows=g.rows;}
    if(readyAt!==null&&!g.player.qte.ready&&g.player.qte.escapes===completed){abortedRecoveries.push({filledAt:readyAt,time:g.now,cause:state()==='GAME_OVER'||state()==='DYING'?'defeat':'effort-reset'});readyAt=null;seenReady=false;}
    if(g.player.ragdoll.knockdowns>lastKnockdowns){lastKnockdowns=g.player.ragdoll.knockdowns;seenReady=false;}
-   if(g.player.qte.ready&&g.player.qte.active&&g.player.qte.phase!=='STANDING'&&g.player.ragdoll.down&&!seenReady){readyAt=g.now;seenReady=true;}
+   if(g.player.qte.ready&&g.player.qte.active&&g.player.qte.phase!=='STANDING'&&g.player.ragdoll.down&&!seenReady){readyAt=g.now;readyBlocked=g.player.ragdoll.recoveryBlockedSeconds;seenReady=true;}
    if(readyAt!==null&&(tick%6===0||g.player.qte.escapes>completed)){
     const r=g.player.ragdoll as unknown as {forcedStarted:number;forcedTarget:unknown};
     recoveryTrace.push({time:g.now,effort:g.player.qte.effort,phase:g.player.qte.phase,state:g.player.state,down:g.player.ragdoll.down,blocked:g.player.ragdoll.blocked,pose:g.player.ragdoll.poseProgress,position:{...g.player.current},mobility:g.player.damage.mobility,forcedStarted:Number.isFinite(r.forcedStarted)?r.forcedStarted:null,target:r.forcedTarget?(r.forcedTarget as {center:unknown}).center:null,rows:g.rows});
    }
    if(g.player.qte.escapes>completed){
-    if(readyAt!==null)recoveries.push({filledAt:readyAt,handedOffAt:g.now,seconds:g.now-readyAt,mobility:g.player.damage.mobility});
+    if(readyAt!==null)recoveries.push({filledAt:readyAt,handedOffAt:g.now,seconds:g.now-readyAt,blockedSeconds:g.player.ragdoll.recoveryBlockedSeconds-readyBlocked,mobility:g.player.damage.mobility});
     completed=g.player.qte.escapes;readyAt=null;
    }
    if(tick%60===0||state()==='GAME_OVER')samples.push({time:g.now,state:g.state,drops:g.drops,rows:g.rows,parts:g.physics.parts.size,health:g.health,air:g.survival.air,down:g.player.ragdoll.down,qte:g.player.qte.progress});

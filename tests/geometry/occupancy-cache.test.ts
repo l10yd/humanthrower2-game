@@ -35,7 +35,7 @@ describe('bounded physical occupancy / footprint cache',()=>{
  });
  it('fast half-space rejection exactly matches original clipping for rotated cut hulls and boundaries',()=>{
   const p=new PhysicsManager();try{
-   const fast=new OccupancyRaster(),reference=new OccupancyRaster();reference.fastClipping=false;
+   const fast=new OccupancyRaster(),reference=new OccupancyRaster();reference.fastClipping=false;reference.sharedCornerTransforms=false;reference.geometryReads=false;reference.singlePassStatistics=false;reference.footprintSpans=false;
    for(let i=0;i<40;i++){
     const original=box(.12+(i%5)*.13,.08+(i%7)*.19,.05+(i%3)*.2);
     const pieces=i%2?subtractSlabs(original,vec(0,1,0),[{lower:-.003,upper:.017}]):[original];

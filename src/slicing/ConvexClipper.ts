@@ -11,16 +11,35 @@ export function box(hx: number, hy: number, hz: number): ConvexPolyhedron {
   return { faces: [[0,3,2,1],[4,5,6,7],[0,4,7,3],[1,2,6,5],[0,1,5,4],[3,7,6,2]].map(f => ({ vertices: f.map(i => p[i]) })) };
 }
 export function vertices(poly: ConvexPolyhedron): Vec3[] {
-  const result: Vec3[] = []; for (const f of poly.faces) for (const p of f.vertices)
-    if (!result.some(v => length(sub(v,p)) < TOPOLOGY_EPSILON)) result.push(p); return result;
+  const result: Vec3[] = [],seen=new Map<number,Map<number,Set<number>>>();
+  for (const f of poly.faces) for (const p of f.vertices){
+    if(!Number.isFinite(p.x+p.y+p.z)){if(!result.some(v=>length(sub(v,p))<TOPOLOGY_EPSILON))result.push(p);continue;}
+    const ys=seen.get(p.x),zs=ys?.get(p.y);if(zs?.has(p.z))continue;
+    // Exact repeated face corners can bypass the tolerance scan. Near-distinct
+    // points still run its unchanged Math.hypot predicate and first-match order.
+    if(zs)zs.add(p.z);else if(ys)ys.set(p.y,new Set([p.z]));else seen.set(p.x,new Map([[p.y,new Set([p.z])]]));
+    if (!result.some(v => length(sub(v,p)) < TOPOLOGY_EPSILON)) result.push(p);
+  }
+  return result;
+}
+/** Read-only operation scope, never retained across in-place geometry edits.
+ * Reuses exact first-match welding results; no tolerance/coordinate changes. */
+export class GeometryRead {
+ private points=new WeakMap<ConvexPolyhedron,Vec3[]>();reads=0;welds=0;
+ vertices(poly:ConvexPolyhedron):Vec3[]{this.reads++;let points=this.points.get(poly);if(!points){points=vertices(poly);this.points.set(poly,points);this.welds++;}return points;}
 }
 export function massProperties(poly: ConvexPolyhedron): { volume: number; center: Vec3 } {
-  let volume = 0, moment = vec();
-  for (const f of poly.faces) for (let i=1; i<f.vertices.length-1; i++) {
-    const a=f.vertices[0], b=f.vertices[i], c=f.vertices[i+1];
-    const v=dot(a,cross(b,c))/6; volume+=v; moment=add(moment,mul(add(add(a,b),c),v/4));
+  let volume=0,mx=0,my=0,mz=0;
+  for(const f of poly.faces)for(let i=1;i<f.vertices.length-1;i++){
+    const a=f.vertices[0],b=f.vertices[i],c=f.vertices[i+1];
+    // Same operation order as dot(a,cross(b,c))/6 and the tetrahedron moment;
+    // avoid seven temporary vectors per triangle without changing predicates.
+    const v=(a.x*(b.y*c.z-b.z*c.y)+a.y*(b.z*c.x-b.x*c.z)+a.z*(b.x*c.y-b.y*c.x))/6;
+    volume+=v;const quarter=v/4;
+    mx+=((a.x+b.x)+c.x)*quarter;my+=((a.y+b.y)+c.y)*quarter;mz+=((a.z+b.z)+c.z)*quarter;
   }
-  return { volume, center: Math.abs(volume)>1e-12 ? mul(moment,1/volume) : vec() };
+  const scale=Math.abs(volume)>1e-12?1/volume:0;
+  return {volume,center:Math.abs(volume)>1e-12?vec(mx*scale,my*scale,mz*scale):vec()};
 }
 function cleanRing(ring: Vec3[]): Vec3[] {
   const out: Vec3[] = [];
@@ -35,9 +54,9 @@ function cleanRing(ring: Vec3[]): Vec3[] {
   }} return out;
 }
 /** Closed convex half-space intersection n·p <= d, with an outward-facing cap. */
-export function clip(poly: ConvexPolyhedron, n: Vec3, d: number): ConvexPolyhedron | null {
+export function clip(poly: ConvexPolyhedron, n: Vec3, d: number,read?:GeometryRead): ConvexPolyhedron | null {
   for(const face of poly.faces)validateFaceUvs(face);
-  const points = vertices(poly), distances=points.map(p=>dot(n,p)-d);
+  const points = read?read.vertices(poly):vertices(poly), distances=points.map(p=>dot(n,p)-d);
   if (distances.every(v=>v<=TOPOLOGY_EPSILON)) return poly;
   if (distances.every(v=>v>=-TOPOLOGY_EPSILON)) return null;
   const faces: Face[]=[], ring: Vec3[]=[];
@@ -80,23 +99,34 @@ export function mergeIntervals(intervals: Interval[]): Interval[] {
   } return result;
 }
 /** Intervals are expressed along n in the current body's reference frame. */
-export function subtractSlabs(poly: ConvexPolyhedron, n: Vec3, intervals: Interval[]): ConvexPolyhedron[] {
+export function subtractSlabs(poly: ConvexPolyhedron, n: Vec3, intervals: Interval[],read?:GeometryRead): ConvexPolyhedron[] {
   const kept:ConvexPolyhedron[]=[];let remaining:ConvexPolyhedron|null=poly;
   for(const i of mergeIntervals(intervals)) {
-    if(!remaining) break; const lower=clip(remaining,n,i.lower); if(lower) kept.push(lower);
-    remaining=clip(remaining,mul(n,-1),-i.upper);
+    if(!remaining) break; const lower=clip(remaining,n,i.lower,read); if(lower) kept.push(lower);
+    remaining=clip(remaining,mul(n,-1),-i.upper,read);
   } if(remaining) kept.push(remaining);return kept;
 }
 export function contains(poly: ConvexPolyhedron, p: Vec3, tolerance=0.001): boolean {
   return poly.faces.every(f=> { const normal=normalize(cross(sub(f.vertices[1],f.vertices[0]),sub(f.vertices[2],f.vertices[0])));
     return dot(normal,sub(p,f.vertices[0]))<=tolerance; });
 }
-export function validate(poly: ConvexPolyhedron): void {
+export function validate(poly:ConvexPolyhedron,read:GeometryRead):void;
+export function validate(poly:ConvexPolyhedron):void;
+export function validate(poly: ConvexPolyhedron,read?:GeometryRead): void {
+  // Preserve use as Array.forEach(validate): its numeric index is not a scope.
+  if(!(read instanceof GeometryRead))read=undefined;
   for(const face of poly.faces)validateFaceUvs(face);
-  const ps=vertices(poly); if(ps.some(p=>!Number.isFinite(p.x+p.y+p.z))) throw Error('Non-finite hull');
+  const ps=read?read.vertices(poly):vertices(poly); if(ps.some(p=>!Number.isFinite(p.x+p.y+p.z))) throw Error('Non-finite hull');
   if(massProperties(poly).volume<=1e-12) throw Error('Non-positive hull volume');
-  if(ps.some(p=>!contains(poly,p,EPSILON*4))) throw Error('Non-convex hull');
-  const edges=new Map<string,number>(); const index=(p:Vec3)=>ps.findIndex(v=>length(sub(v,p))<TOPOLOGY_EPSILON);
+  // Same face normals/point predicate, computed once in this read-only barrier
+  // instead of for every vertex. Diagnostic no-scope mode retains the reference.
+  const planes=read?poly.faces.map(f=>({normal:normalize(cross(sub(f.vertices[1],f.vertices[0]),sub(f.vertices[2],f.vertices[0]))),origin:f.vertices[0]})):null;
+  if(ps.some(p=>planes?!planes.every(f=>dot(f.normal,sub(p,f.origin))<=EPSILON*4):!contains(poly,p,EPSILON*4))) throw Error('Non-convex hull');
+  const indices=read?new Map<Vec3,number>():null;
+  const edges=new Map<string,number>(); const index=(p:Vec3)=>{
+    let id=indices?.get(p);if(id!==undefined)return id;
+    id=ps.findIndex(v=>length(sub(v,p))<TOPOLOGY_EPSILON);indices?.set(p,id);return id;
+  };
   for(const f of poly.faces) for(let i=0;i<f.vertices.length;i++) {
     const a=index(f.vertices[i]),b=index(f.vertices[(i+1)%f.vertices.length]);const key=`${Math.min(a,b)}:${Math.max(a,b)}`;
     edges.set(key,(edges.get(key)??0)+1);

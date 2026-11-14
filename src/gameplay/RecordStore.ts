@@ -1,5 +1,5 @@
 import type { LossReason } from './LossDetector';
-export const RULES_VERSION='3.8-acid-pile-event';
+export const RULES_VERSION='3.9-dynamic-destination-recovery';
 export interface SessionRecord {
   rulesVersion:string;profile:'desktop'|'mobile';arenaPreset:string;assisted:boolean;seed:string;
   score:number;rows:number;durationSeconds:number;maxCombo:number;drops:number;lossReason:LossReason;

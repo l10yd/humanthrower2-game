@@ -1,0 +1,430 @@
+{
+  "scope": "Isolated CPU-engine comparison; Jolt is NOT adopted; SixDOF pyramid coordinates differ from Rapier projected axes, no full snapshot/manifold/warmstart equivalence.",
+  "package": {
+    "name": "jolt-physics",
+    "version": "1.1.1",
+    "integrity": "sha512-kMCQu/b4wbHwy7EgZWaSbUyDthIKZUvAGGqta4pBF4Pdq+ljWaNvQoa5hPr/PkVCUVsqcoLwXITUm6975mQhiQ==",
+    "jsCommit": "cccf9d568e8cbae1569ba8e1a24de731591ba0a8",
+    "nativeCommit": "6f8bc72fd5fc6a58a52a7fbfe49ca7b5170b4990",
+    "sourceSha256": "9f16b5c16d74adcbb732b7d9829a37336ead0cda1399c2226890f01d80e0adb8"
+  },
+  "runs": [
+    {
+      "scope": "Isolated Jolt SixDOF pyramid comparison. Same numeric limits, shapes/masses/native tensor, two1/120 steps per tick. Not identical Rapier solver coordinates/warmstart/CCD algorithm. Not production acceptance.",
+      "packageSha256": "34b3660f914ea23d196ae0b7e0014bab08e2a241f4a6bb9c3701a3a8bed11635",
+      "productionAdopted": false,
+      "cases": [
+        {
+          "name": "isolated captured thin against same floor (no imported pile/manifolds)",
+          "maxSpeed": 1.1040995121002197,
+          "maxAngular": 2.826223611831665,
+          "numeric": 0,
+          "first": {
+            "speed": 1.1040995121002197,
+            "angular": 2.826223611831665
+          },
+          "mapping": {
+            "bodies": 1,
+            "maxMassRelative": 7.538446278896605e-9,
+            "maxTensorRelative": 2675.544030643413,
+            "maxComDifference": 0,
+            "zeroInertiaAxes": 0
+          },
+          "details": [
+            {
+              "id": 142,
+              "mass": 2.4232832629422774e-7,
+              "actualMass": 2.4232832446744867e-7,
+              "suppliedTensor": [
+                [
+                  3.1988300897012323e-15,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  3.6228641466378367e-11,
+                  -1.0445024386827205e-17
+                ],
+                [
+                  0,
+                  -1.0445024386827205e-17,
+                  3.622382591887531e-11
+                ]
+              ],
+              "actualTensor": [
+                [
+                  9.693132861251915e-8,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  9.693132861251915e-8,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  9.693132861251915e-8
+                ]
+              ],
+              "sourceCom": {
+                "x": -0.3993808925151825,
+                "y": -0.3513546586036682,
+                "z": -0.21239732205867767
+              },
+              "shapeCom": {
+                "x": -0.3993808925151825,
+                "y": -0.3513546586036682,
+                "z": -0.21239732205867767
+              },
+              "sourcePointCount": 4,
+              "volume": 2.05986516732537e-9,
+              "maxAngular": 3.4028230607370965e+38,
+              "maxLinear": 3.4028230607370965e+38,
+              "innerRadius": 0.00007778243161737919
+            }
+          ],
+          "velocityPass": true,
+          "strictPass": false
+        },
+        {
+          "name": "20 sequential drops; numeric limits preserved via SixDOF pyramid",
+          "parts": 220,
+          "maxSpeed": 15.711112022399902,
+          "maxAngular": 93.35267639160156,
+          "maxDrift": 0.20069939401892434,
+          "calm": 1,
+          "numeric": 0,
+          "stepP95": 4.389199999999619,
+          "mapping": {
+            "bodies": 220,
+            "maxMassRelative": 2.506103356425173e-8,
+            "maxTensorRelative": 1.7672922691384555e-7,
+            "maxComDifference": 2.3127288972801807e-9,
+            "zeroInertiaAxes": 0
+          },
+          "strictPass": false
+        }
+      ]
+    },
+    {
+      "options": {
+        "preservePrincipal": true,
+        "velocitySteps": 8
+      },
+      "scope": "Isolated Jolt SixDOF pyramid comparison. Same numeric limits, shapes/masses/native tensor, two1/120 steps per tick. Not identical Rapier solver coordinates/warmstart/CCD algorithm. Not production acceptance.",
+      "packageSha256": "34b3660f914ea23d196ae0b7e0014bab08e2a241f4a6bb9c3701a3a8bed11635",
+      "productionAdopted": false,
+      "cases": [
+        {
+          "name": "isolated captured thin against same floor (no imported pile/manifolds)",
+          "maxSpeed": 7.3408331871032715,
+          "maxAngular": 1069.7591552734375,
+          "numeric": 0,
+          "first": {
+            "speed": 1.1040995121002197,
+            "angular": 2.826223611831665
+          },
+          "mapping": {
+            "bodies": 1,
+            "maxMassRelative": 7.538446278896605e-9,
+            "maxTensorRelative": 2.4522052207048968e-8,
+            "maxComDifference": 0,
+            "zeroInertiaAxes": 0
+          },
+          "details": [
+            {
+              "id": 142,
+              "preservePrincipal": true,
+              "mass": 2.4232832629422774e-7,
+              "actualMass": 2.4232832446744867e-7,
+              "suppliedTensor": [
+                [
+                  3.1988300897012323e-15,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  3.6228641466378367e-11,
+                  -1.0445024386827205e-17
+                ],
+                [
+                  0,
+                  -1.0445024386827205e-17,
+                  3.622382591887531e-11
+                ]
+              ],
+              "actualTensor": [
+                [
+                  3.1988300479932352e-15,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  3.622864129337539e-11,
+                  -1.0446576099477083e-17
+                ],
+                [
+                  0,
+                  -1.0446576099489705e-17,
+                  3.6223825030474675e-11
+                ]
+              ],
+              "sourceCom": {
+                "x": -0.3993808925151825,
+                "y": -0.3513546586036682,
+                "z": -0.21239732205867767
+              },
+              "shapeCom": {
+                "x": -0.3993808925151825,
+                "y": -0.3513546586036682,
+                "z": -0.21239732205867767
+              },
+              "sourcePointCount": 4,
+              "volume": 2.05986516732537e-9,
+              "maxAngular": 3.4028230607370965e+38,
+              "maxLinear": 3.4028230607370965e+38,
+              "innerRadius": 0.00007778243161737919
+            }
+          ],
+          "velocityPass": false,
+          "strictPass": false
+        },
+        {
+          "name": "20 sequential drops; numeric limits preserved via SixDOF pyramid",
+          "parts": 220,
+          "maxSpeed": 15.711112022399902,
+          "maxAngular": 90.4784164428711,
+          "maxDrift": 0.21652996416302253,
+          "calm": 1,
+          "numeric": 0,
+          "stepP95": 4.797199999999975,
+          "mapping": {
+            "bodies": 220,
+            "maxMassRelative": 2.506103356425173e-8,
+            "maxTensorRelative": 3.3005898322679946e-8,
+            "maxComDifference": 2.3127288972801807e-9,
+            "zeroInertiaAxes": 0
+          },
+          "strictPass": false
+        }
+      ]
+    },
+    {
+      "options": {
+        "preservePrincipal": true,
+        "velocitySteps": 16
+      },
+      "scope": "Isolated Jolt SixDOF pyramid comparison. Same numeric limits, shapes/masses/native tensor, two1/120 steps per tick. Not identical Rapier solver coordinates/warmstart/CCD algorithm. Not production acceptance.",
+      "packageSha256": "34b3660f914ea23d196ae0b7e0014bab08e2a241f4a6bb9c3701a3a8bed11635",
+      "productionAdopted": false,
+      "cases": [
+        {
+          "name": "isolated captured thin against same floor (no imported pile/manifolds)",
+          "maxSpeed": 6.739298343658447,
+          "maxAngular": 1059.2418212890625,
+          "numeric": 0,
+          "first": {
+            "speed": 1.1040995121002197,
+            "angular": 2.826223611831665
+          },
+          "mapping": {
+            "bodies": 1,
+            "maxMassRelative": 7.538446278896605e-9,
+            "maxTensorRelative": 2.4522052207048968e-8,
+            "maxComDifference": 0,
+            "zeroInertiaAxes": 0
+          },
+          "details": [
+            {
+              "id": 142,
+              "preservePrincipal": true,
+              "mass": 2.4232832629422774e-7,
+              "actualMass": 2.4232832446744867e-7,
+              "suppliedTensor": [
+                [
+                  3.1988300897012323e-15,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  3.6228641466378367e-11,
+                  -1.0445024386827205e-17
+                ],
+                [
+                  0,
+                  -1.0445024386827205e-17,
+                  3.622382591887531e-11
+                ]
+              ],
+              "actualTensor": [
+                [
+                  3.1988300479932352e-15,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  3.622864129337539e-11,
+                  -1.0446576099477083e-17
+                ],
+                [
+                  0,
+                  -1.0446576099489705e-17,
+                  3.6223825030474675e-11
+                ]
+              ],
+              "sourceCom": {
+                "x": -0.3993808925151825,
+                "y": -0.3513546586036682,
+                "z": -0.21239732205867767
+              },
+              "shapeCom": {
+                "x": -0.3993808925151825,
+                "y": -0.3513546586036682,
+                "z": -0.21239732205867767
+              },
+              "sourcePointCount": 4,
+              "volume": 2.05986516732537e-9,
+              "maxAngular": 3.4028230607370965e+38,
+              "maxLinear": 3.4028230607370965e+38,
+              "innerRadius": 0.00007778243161737919
+            }
+          ],
+          "velocityPass": false,
+          "strictPass": false
+        },
+        {
+          "name": "20 sequential drops; numeric limits preserved via SixDOF pyramid",
+          "parts": 220,
+          "maxSpeed": 16.539073944091797,
+          "maxAngular": 88.27911376953125,
+          "maxDrift": 0.2525904260957109,
+          "calm": 1,
+          "numeric": 0,
+          "stepP95": 6.047199999999975,
+          "mapping": {
+            "bodies": 220,
+            "maxMassRelative": 2.506103356425173e-8,
+            "maxTensorRelative": 3.3005898322679946e-8,
+            "maxComDifference": 2.3127288972801807e-9,
+            "zeroInertiaAxes": 0
+          },
+          "strictPass": false
+        }
+      ]
+    },
+    {
+      "options": {
+        "preservePrincipal": true,
+        "velocitySteps": 8,
+        "exactThin": true
+      },
+      "scope": "Isolated Jolt SixDOF pyramid comparison. Same numeric limits, shapes/masses/native tensor, two1/120 steps per tick. Not identical Rapier solver coordinates/warmstart/CCD algorithm. Not production acceptance.",
+      "packageSha256": "34b3660f914ea23d196ae0b7e0014bab08e2a241f4a6bb9c3701a3a8bed11635",
+      "productionAdopted": false,
+      "cases": [
+        {
+          "name": "isolated captured thin geometry-exact tensor against same floor (no imported pile/manifolds)",
+          "maxSpeed": 1.1040995121002197,
+          "maxAngular": 713.5615844726562,
+          "numeric": 0,
+          "first": {
+            "speed": 1.1040995121002197,
+            "angular": 2.826223611831665
+          },
+          "mapping": {
+            "bodies": 1,
+            "maxMassRelative": 7.538446278896605e-9,
+            "maxTensorRelative": 5.512516952956163e-8,
+            "maxComDifference": 0,
+            "zeroInertiaAxes": 0
+          },
+          "details": [
+            {
+              "id": 142,
+              "preservePrincipal": true,
+              "mass": 2.4232832629422774e-7,
+              "actualMass": 2.4232832446744867e-7,
+              "suppliedTensor": [
+                [
+                  3.6225766496953626e-11,
+                  9.113595289922732e-14,
+                  5.929477905861759e-16
+                ],
+                [
+                  9.113595289922732e-14,
+                  3.596977039335823e-15,
+                  7.856057645434648e-14
+                ],
+                [
+                  5.929477905861759e-16,
+                  7.856057645434648e-14,
+                  3.622629669395146e-11
+                ]
+              ],
+              "actualTensor": [
+                [
+                  3.622576449997288e-11,
+                  9.113579225909937e-14,
+                  5.939536473676471e-16
+                ],
+                [
+                  9.113579225909937e-14,
+                  3.596972916893178e-15,
+                  7.855986125599002e-14
+                ],
+                [
+                  5.939536473708783e-16,
+                  7.855986125599002e-14,
+                  3.622629709298974e-11
+                ]
+              ],
+              "sourceCom": {
+                "x": -0.3993808925151825,
+                "y": -0.3513546586036682,
+                "z": -0.21239732205867767
+              },
+              "shapeCom": {
+                "x": -0.3993808925151825,
+                "y": -0.3513546586036682,
+                "z": -0.21239732205867767
+              },
+              "sourcePointCount": 4,
+              "volume": 2.05986516732537e-9,
+              "maxAngular": 3.4028230607370965e+38,
+              "maxLinear": 3.4028230607370965e+38,
+              "innerRadius": 0.00007778243161737919
+            }
+          ],
+          "velocityPass": false,
+          "strictPass": false
+        },
+        {
+          "name": "20 sequential drops; numeric limits preserved via SixDOF pyramid",
+          "parts": 220,
+          "maxSpeed": 15.711112022399902,
+          "maxAngular": 90.4784164428711,
+          "maxDrift": 0.21652996416302253,
+          "calm": 1,
+          "numeric": 0,
+          "stepP95": 4.79910000000018,
+          "mapping": {
+            "bodies": 220,
+            "maxMassRelative": 2.506103356425173e-8,
+            "maxTensorRelative": 3.3005898322679946e-8,
+            "maxComDifference": 2.3127288972801807e-9,
+            "zeroInertiaAxes": 0
+          },
+          "strictPass": false
+        }
+      ]
+    }
+  ],
+  "productionAdopted": false
+}

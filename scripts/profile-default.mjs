@@ -23,10 +23,10 @@ try{
  await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});
  browser=await chromium.launch({headless:true,args:['--use-angle=swiftshader','--enable-webgl','--ignore-gpu-blocklist']});
  const page=await browser.newPage({viewport:{width:1280,height:900}});
- await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>!!window.humanthrower);
+ await page.goto(`http://127.0.0.1:${server.address().port}/${process.env.HUMANTHROWER_GEOMETRY_WORKER==='1'?'?geometry-worker':''}`);await page.waitForFunction(()=>!!window.humanthrower);
  const data=await page.evaluate(({seeds,seconds})=>{
   const g=window.humanthrower,reports=[];
-  const capture=()=>({simulationTime:g.now,state:g.state,parts:g.physics.parts.size,sleeping:[...g.physics.parts.values()].filter(p=>p.body.isSleeping()).length,joints:g.physics.joints.size,geometry:g.physics.geometryUsage,gore:g.gore.snapshot,clearQueries:{...g.physics.clearQueries},phase:g.player.state,profile:g.profiler.snapshot});
+  const capture=()=>({allocationQueries:{...g.physics.allocationQueries},rowPreparation:g.rowPreparation.snapshot,simulationTime:g.now,state:g.state,parts:g.physics.parts.size,sleeping:[...g.physics.parts.values()].filter(p=>p.body.isSleeping()).length,joints:g.physics.joints.size,geometry:g.physics.geometryUsage,gore:g.gore.snapshot,clearQueries:{...g.physics.clearQueries},phase:g.player.state,profile:g.profiler.snapshot});
   for(const seed of seeds){
    g.restart(seed);g.pause();g.profiler.enabled=true;g.state='RUNNING';let frame=0,error=null,maxParts=0;const checkpoints=[];
    const input=g.input.consume;g.input.consume=()=>({axis:g.player.current.x>2.8?-1:g.player.current.x<-2.8?1:Math.floor(g.now/3)%2?1:-1,stomp:false,saw:true,pressed:frame%12===0,released:frame%12===1,effortPresses:frame%6===0?1:0,jumpPresses:frame%12===0?1:0});
@@ -40,7 +40,16 @@ try{
    const draw=()=>g.renderer.render(g.physics.parts.values(),g.player,g.detector.rows,[],g.visualTime,1,g.saw,g.gore,g.weapons);
    for(let i=0;i<8;i++)draw();const submission=[];for(let i=0;i<20;i++){draw();submission.push(g.renderer.renderStats.submissionMs);}
    submission.sort((a,b)=>a-b);
-   reports.push({seed,error,ticks:frame,maxParts,rows:g.rows,culled:g.culled,maxSpeed:g.physics.maxSpeed,maxAngular:g.physics.maxAngularSpeed,result:g.result,checkpoints,final,render:{...g.renderer.renderStats,submissionP95:submission[Math.floor(submission.length*.95)],stains:g.renderer.bloodBodyDecals,decals:g.renderer.bloodDecalStats}});
+   const batched={...g.renderer.renderStats},batching={...g.renderer.batches.snapshot};
+   const state=g.physics.world.takeSnapshot();g.renderer.batches.enabled=false;draw();const unbatched={...g.renderer.renderStats};g.renderer.batches.enabled=true;draw();
+   const afterRender=g.physics.world.takeSnapshot();if(!state.every((v,i)=>v===afterRender[i]))throw Error('Rendering changed physics');
+   const occupancySettings={shared:g.occupancy.sharedCornerTransforms,reads:g.occupancy.geometryReads,statistics:g.occupancy.singlePassStatistics,spans:g.occupancy.footprintSpans};
+   const occupied=g.occupancy.rebuild(g.physics.parts.values(),false),map=g.occupancy.map.slice();
+   const measureOccupancy=(shared,reads,statistics=true,spans=true)=>{g.occupancy.sharedCornerTransforms=shared;g.occupancy.geometryReads=reads;g.occupancy.singlePassStatistics=statistics;g.occupancy.footprintSpans=spans;const times=[];for(let i=0;i<3;i++)g.occupancy.rebuild(g.physics.parts.values(),false);for(let i=0;i<15;i++){const start=performance.now();g.occupancy.rebuild(g.physics.parts.values(),false);times.push(performance.now()-start);}return times;};
+   const occupancyBefore=measureOccupancy(false,false,false,false),occupancyShared=measureOccupancy(true,false,false,false),occupancyRead=measureOccupancy(true,true,false,false),occupancyStatistics=measureOccupancy(true,true,true,false),occupancyAfter=measureOccupancy(true,true,true,true);
+   if(!map.every((v,i)=>v===g.occupancy.map[i])||JSON.stringify(occupied)!==JSON.stringify(g.occupancy.rows))throw Error('Occupancy transform optimization changed map');
+   g.occupancy.sharedCornerTransforms=occupancySettings.shared;g.occupancy.geometryReads=occupancySettings.reads;g.occupancy.singlePassStatistics=occupancySettings.statistics;g.occupancy.footprintSpans=occupancySettings.spans;
+   reports.push({seed,error,ticks:frame,maxParts,rows:g.rows,culled:g.culled,maxSpeed:g.physics.maxSpeed,maxAngular:g.physics.maxAngularSpeed,result:g.result,checkpoints,final,occupancyComparison:{before:occupancyBefore,shared:occupancyShared,read:occupancyRead,statistics:occupancyStatistics,after:occupancyAfter},render:{...batched,batching,unbatched,submissionP95:submission[Math.floor(submission.length*.95)],stains:g.renderer.bloodBodyDecals,decals:g.renderer.bloodDecalStats}});
   }
   const gl=g.renderer.renderer.getContext(),ext=gl.getExtension('WEBGL_debug_renderer_info');
   return {browser:navigator.userAgent,gpu:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):'unknown',art:!!g.renderer.character,environment:!!g.renderer.shaft,mode:g.mode,npcMode:g.npcMode,reports};

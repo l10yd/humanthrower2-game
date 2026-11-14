@@ -1,0 +1,149 @@
+{
+  "scope": "Archived impulse-step + PGS bounded experiment; productionAdopted false",
+  "candidateSha256": "9740586d4e349bb0e0c381ce7736c63dc08492b82842dc004b333752ae7adfe3",
+  "reports": [
+    {
+      "stem": "joint-limit-impact",
+      "pgs": 1,
+      "baseline": {
+        "incidentAngular": 82.8236998809527,
+        "worldAngular": 82.8236998809527,
+        "worldSpeed": 13.436504243909132
+      },
+      "candidate": {
+        "incidentAngular": 18.70748007401345,
+        "worldAngular": 47.71014436869375,
+        "worldSpeed": 13.47455787176258
+      },
+      "observerExact": true,
+      "strictOneStepPass": false
+    },
+    {
+      "stem": "joint-limit-impact",
+      "pgs": 4,
+      "baseline": {
+        "incidentAngular": 36.18957835991426,
+        "worldAngular": 36.987833566317335,
+        "worldSpeed": 12.82276036408226
+      },
+      "candidate": {
+        "incidentAngular": 3.9321105747194247,
+        "worldAngular": 30.980259833118126,
+        "worldSpeed": 12.942097600250234
+      },
+      "observerExact": true,
+      "strictOneStepPass": true
+    },
+    {
+      "stem": "joint-limit-impact",
+      "pgs": 8,
+      "baseline": {
+        "incidentAngular": 33.96492984987302,
+        "worldAngular": 35.4363779923608,
+        "worldSpeed": 12.837873591546137
+      },
+      "candidate": {
+        "incidentAngular": 3.8523025417300083,
+        "worldAngular": 28.51314944255336,
+        "worldSpeed": 12.852553236112453
+      },
+      "observerExact": true,
+      "strictOneStepPass": true
+    },
+    {
+      "stem": "joint-limit-impact",
+      "pgs": 16,
+      "baseline": {
+        "incidentAngular": 21.51887130595347,
+        "worldAngular": 31.05632804137717,
+        "worldSpeed": 12.868178220228536
+      },
+      "candidate": {
+        "incidentAngular": 3.7629742475916466,
+        "worldAngular": 33.1668650690492,
+        "worldSpeed": 12.862316061513493
+      },
+      "observerExact": true,
+      "strictOneStepPass": true
+    },
+    {
+      "stem": "thin-contact-impact",
+      "pgs": 1,
+      "baseline": {
+        "incidentAngular": 1465.401849679397,
+        "worldAngular": 1465.401849679397,
+        "worldSpeed": 59.99341387355538
+      },
+      "candidate": {
+        "incidentAngular": 18.865667022481354,
+        "worldAngular": 18.865667022481354,
+        "worldSpeed": 59.99341387355538
+      },
+      "observerExact": true,
+      "strictOneStepPass": false
+    },
+    {
+      "stem": "thin-contact-impact",
+      "pgs": 4,
+      "baseline": {
+        "incidentAngular": 1406.4471404824073,
+        "worldAngular": 1406.4471404824073,
+        "worldSpeed": 59.99341387355538
+      },
+      "candidate": {
+        "incidentAngular": 18.865598572012583,
+        "worldAngular": 18.865598572012583,
+        "worldSpeed": 59.99341387355538
+      },
+      "observerExact": true,
+      "strictOneStepPass": false
+    },
+    {
+      "stem": "thin-contact-impact",
+      "pgs": 8,
+      "baseline": {
+        "incidentAngular": 1377.145773110898,
+        "worldAngular": 1377.145773110898,
+        "worldSpeed": 59.99341387355538
+      },
+      "candidate": {
+        "incidentAngular": 18.86558556529832,
+        "worldAngular": 18.86558556529832,
+        "worldSpeed": 59.99341387355538
+      },
+      "observerExact": true,
+      "strictOneStepPass": false
+    },
+    {
+      "stem": "thin-contact-impact",
+      "pgs": 16,
+      "baseline": {
+        "incidentAngular": 1365.102330792658,
+        "worldAngular": 1365.102330792658,
+        "worldSpeed": 59.99341387355538
+      },
+      "candidate": {
+        "incidentAngular": 18.86546999611177,
+        "worldAngular": 18.86546999611177,
+        "worldSpeed": 59.99341387355538
+      },
+      "observerExact": true,
+      "strictOneStepPass": false
+    }
+  ],
+  "worldGate": {
+    "pgs": 4,
+    "parts": 220,
+    "maxSpeed": 19.10510220286474,
+    "limb": "forearm-1",
+    "maxAngularSpeed": 90.84042623974263,
+    "maxDrift": 0.011821477980059388,
+    "calm": 1,
+    "physicsP95": 20.650699999998324,
+    "kccSeedsFailed": [
+      17,
+      42
+    ],
+    "productionAdopted": false
+  }
+}

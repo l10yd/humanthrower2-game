@@ -62,6 +62,9 @@ npm run test:demo                   # механики + браузерные с
 npx playwright test tests/browser/chaos-demo.spec.ts tests/browser/chaos-polish.spec.ts tests/browser/medical-hazards.spec.ts
 npm run test:performance             # large-world recovery / opt-in profiler
 npm run profile:default -- test-results/default-profile.json # production CPU/render diagnostic
+npm run profile:geometry -- test-results/geometry-profile.json # offline exact allocation/clear comparison
+npm run profile:stress -- test-results/default-stress.json # actual RAF/contact graph; hardware opt-in
+npm run test:stability               # strict original20drop + whole-world thin (currently red)
 npm run test:mvp                     # строгий unit/physics + build + полный browser gate
 ```
 
@@ -71,7 +74,15 @@ npm run test:mvp                     # строгий unit/physics + build + п�
 
 Актуальный default-контракт и проверяемый backlog: **[docs/MVP_PLAN.md](docs/MVP_PLAN.md)**. Исходная ревизия: [docs/DEMO_AUDIT.md](docs/DEMO_AUDIT.md).
 
-Первый performance-проход ускорил расчистку при подъёме, добавил пространственный индекс collision queries и исправил выход обломков выше чаши. Второй объединил body blood decals в один draw call, ускорил occupancy и исправил crash сцены смерти после смертельного среза. Текущий релиз добавляет кислотное событие и правила рекордов `3.8-acid-pile-event`. Перед этим выполнены CPU/render оптимизации и исправления регрессий; исследовательские native-кандидаты отвергнуты, production Rapier не заменён. Подробная история: [docs/MVP_CHECKPOINT_3.md](docs/MVP_CHECKPOINT_3.md), [docs/MVP_CHECKPOINT_4.md](docs/MVP_CHECKPOINT_4.md). Строгие angular gates пока не закрыты; игра остаётся экспериментальной. Численные physics gates остаются открыты: это пока не заявление о готовом MVP.
+Текущий проход объединяет уникальные fragment scene/shadow calls, ограничивает DOM HUD30Hz и проверяет recovery destinations против других dynamic/kinematic islands. Verified no-destination пауза сохраняет выигрыш QTE; records **`3.9-dynamic-destination-recovery`** отделены от acid-era3.8. На одном30s production snapshot exact batching434→108calls без изменения triangles/physics. LocalRyzen5600/RTX5070Ti stress показал droppedTime0, но lateCPU/strictphysics gates не закрыты. Bounded impulse+PGS candidate отвергнут; production Rapier не заменён. Текущий отчёт и явное physics NO-GO: [docs/MVP_CHECKPOINT_6.md](docs/MVP_CHECKPOINT_6.md). **A–C не полностью приняты, этапD не выполнялся**; GPU/device/human/remote acceptance остаются открыты.
+
+Текущий checkpoint: **[docs/MVP_CHECKPOINT_10.md](docs/MVP_CHECKPOINT_10.md)**. Исправлен переносdynamic subset связной island сfixed/kinematic anchor; теперь блокируется целикомбезизмененияjoint. Naturalroutecaptureвыявил13pathblockers; boundedcoordinatedplannerнеaccepted. BuildPASS,481/483unit/129/130browser;physics/fullpath/latebudgetsopen,Dnotrun.
+
+Предыдущий checkpoint: **[docs/MVP_CHECKPOINT_9.md](docs/MVP_CHECKPOINT_9.md)**. Read-scope allocation сохраняетbudget/validation/rollback иускорилsame32partclear→64survivorsmean4,90→3,26мс. Occupancysinglepass/spansнеpromotedиз-занейтральногоnaturalзамера. Fresh470/472unit/129/130browser;strictphysics/latebudget/pathopen,Dnotrun.
+
+Предыдущий checkpoint: **[docs/MVP_CHECKPOINT_8.md](docs/MVP_CHECKPOINT_8.md)**. ПервыйisolatedJoltcomparisonнепрошёл35rad/s/.1manchors; малыескороститонкоготелаавтоматическименялиinertia, неaccepted. ProductionRapierunchanged. Operation-scopedgeometryreadcacheускорилpairedoccupancymean4,63→3,95мсwithoutmapchanges;463/465unitи129/130freshbrowser, толькоstrictphysicsfailures. A–Cnotcomplete,Dnotrun.
+
+Текущее продолжение: [docs/MVP_CHECKPOINT_7.md](docs/MVP_CHECKPOINT_7.md). Добавлены exact geometry CPU fastpaths и opt-in`?geometry-worker` сFloat64transfer/exactposevalidation/synchronousfallback; WorkerпоумолчаниюOFFиз-занизкогоnaturalcachehit. Полныйrecoverypathvetoотвергнутпосленaturalwinregression, productiondestinationcontractсохранён. Strictphysics/latebudgetещёopen,Dне выполнялся.
 
 `?profile` включает ограниченную CPU-диагностику: `window.humanthrower.profiler.snapshot`. По умолчанию расширенный сбор выключен. Метрики вложены; их p95 нельзя суммировать. `?debug` по-прежнему показывает диагностический HUD.
 

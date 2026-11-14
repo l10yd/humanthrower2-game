@@ -136,6 +136,14 @@ Newread-onlyjointobserver verifies40fullpre/postGramSchmidtblocks andoriginalloc
 
 Checkpoint4 isolated current-anchor arm calculation keeps physicalmass/inertia/CCD/contactflags unchanged, reduces captured102incident1465.402→1155.818rad/s (exact89.609→89.406), but stillfails35 and worsensnormal20droptoω175.343/v28.319withKCCseed42supportregression. Rejected, productionoriginal/observernativecontactsource restored. PGS1→16onlyreducesincidentthin1465→1365, notjoint-convergence-onlycause. [docs/MVP_CHECKPOINT_4.md](docs/MVP_CHECKPOINT_4.md) / NATIVE_PHYSICS.md preserve evidence; no acceptednewphysicscorrection.
 
+## Checkpoint6 explicit policy decision
+
+Extreme thin survivors keep exact geometry/mass/inertia: no minimum-thickness collision proxy, inertia inflation, clamp, hidden cull or fake sleep adopted. Bounded archived impulse-step+globalPGS convergence fails unchangedworld20drop/KCC acceptance; increasingiterations is not accepted. Whole-world thin strict `<25m/s/<35rad/s` now has a red ordinary unit gate, not just green causal reproduction. Architecture is NO-GO for stableMVP on current pipeline; next separate isolatedCPUenginecomparison must use these exactfixtures andworldgates before choosing/replacingengine. [docs/MVP_CHECKPOINT_6.md](docs/MVP_CHECKPOINT_6.md). No physicsfix claimed; Dnotrun.
+
+## Checkpoint8 another CPUengine does not close tinygate
+
+IsolatedJolt1.1.1capabilitytest: samecaptured4vertexhull/nativeinertiainitialposeagainstfloor(notfull102snapshot/warmstart) smallω2.826underautomaticmassassignmenthasactualsphereinertia~.4massinsteadnative3e−15; relativeerror2675.5→notexactPASS. PublicSetInverseInertiapreservesnativeprincipal/frame(error2.45e−8)butω1069.759FAIL; geometryexacttensorω713.562FAIL. Normal20drop/droplimitsalsofail. NoJoltadoption/proxyinertiainflation. Pinnedsourceandnegativefixture/tests [docs/MVP_CHECKPOINT_8.md](docs/MVP_CHECKPOINT_8.md). ProductionRapier/tinygeometryunchanged.
+
 ## Next decision boundary
 
 1. LocalisolatedRust/WASMtoolchainandunmodifiedbaselineverified; retaincomparisonartifacts per[NATIVE_PHYSICS.md](NATIVE_PHYSICS.md).

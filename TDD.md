@@ -2,6 +2,30 @@
 
 > **Актуальный default-контракт и новый план:** [docs/MVP_PLAN.md](docs/MVP_PLAN.md). Первый CPU/query/recovery этап описан там; historical runtime overrides ниже сохраняются как история. `<25 m/s / <35 rad/s` physics gates и hardware performance acceptance не ослаблены.
 
+## Runtime checkpoint10 — anchored islands and route research
+
+Ejection больше не фильтрует connected group доdynamic subset: fixed/kinematic/disabled/sensor member блокируетвсюisland, retainedjoint/IDs/snapshotсохранены. Naturalcaptured7partbarrierс13initial/sweptblockers; read-onlycoordinatedclosureplanner1999work/17,6ms/exhausted/no plan→notadopted, недоказательствобезмаршрутности. Probe/plannerизолированы, optionalcapturehookundefinedruntime/disposeclears. Fresh481/483unit/129/130browser, strictphysics/path/latebudgetsopen,Dnotrun. [docs/MVP_CHECKPOINT_10.md](docs/MVP_CHECKPOINT_10.md).
+
+## Runtime checkpoint9 — allocation geometry barrier
+
+Operation-scopedGeometryReadтеперьпроходитчерезgeometryUsage/validate/prepareCollider/stagedclearallocations, noacross-tickcache. Budgetchecksреисполняются, planes/indicescachepreservessameexactpredicates; nativeQuickHull/convexMesh/snapshot unchanged. Same32rotatedsleepingparts→64survivorsclearmean4,90→3,26мс, syntheticнеFPSacceptance. Occupancysinglepass/spansdiagvariantsdefaultOFFпослеneutralnaturalseed17comparison. Full470/472unit+129/130browser, onlystrictstabilityfails;Dnotrun. [docs/MVP_CHECKPOINT_9.md](docs/MVP_CHECKPOINT_9.md).
+
+## Runtime checkpoint8 — operation-scoped exact geometry reads
+
+`GeometryRead`WeakMapper-operationmemoizesoriginalweldedvertices, usedwithinoccupancyprojection/rowpreparationonly; noacross-tickcache/mass/inertiachange. Optionalclip/subtractSlabsargpreservesexactpredicates/caps/UV/score. Pairedfrozen170partsoccupancymean4,63→3,95ms/mapexact; naturalp95still3,7ms>2target. JoltisolatedCPUcomparisonrejectedbyinertiapreservation/velocity/driftgates, noenginepromotion. Fresh463/465unit/129/130browser;Dnotrun. [docs/MVP_CHECKPOINT_8.md](docs/MVP_CHECKPOINT_8.md).
+
+## Runtime checkpoint7 — pure preparation and measured non-adoption
+
+`RowPreparation` выделен в pure geometry; opt-in`?geometry-worker` отправляетFloat64transferarrays/face metadata. Cache exactsourcepolyidentity+pose+rowgroup/requestID; commitfallbackпересчитываетstale/new/playercutsне задерживаядедлайн. Allocation/jointrollbackmainthreadunchanged. WorkerONnatural1hit/303misses→defaultOFF, неуниверсальныйperffix. Exactrepeatweldingfastpath/scalartetrahedronmomentsбитовосохраняютpredicate/arithmetic, occupancysharedcornertransformpairedmapexact/mean5→4,56мс.
+
+Islandtranslationpathvetoизолированнопротестирован: originalsmallfixturesPASS, naturalseed93winblocked11,8с/0handoffs→rejected, runtimeendpointrestored. Diagnostic`IslandTranslation`неимпортируетсяproduction. [docs/MVP_CHECKPOINT_7.md](docs/MVP_CHECKPOINT_7.md);Cpath/stabilityиBbudgetsopen,Dnotrun.
+
+## Runtime A–C continuation — dynamic destinations, no stability promotion
+
+Текущий contract: [docs/MVP_CHECKPOINT_6.md](docs/MVP_CHECKPOINT_6.md). Recovery island destinations проверяют external dynamic/kinematic тела и previous moves; no destination → retained win/kinematic stroke pause/no KCC handoff, отдельный fixed-tick `recoveryBlockedSeconds`. No continuous dynamic path/angular sweep claim. Records3.9; exact geometry/masses/inertia сохраняются.
+
+Unique hull render buffer содержит original local attributes + per-vertex world matrices; shared surface/Lambert/depth shaders, no repeat frozen transform upload. HUD30Hz не меняет simulation/input clocks. Bounded archived impulse+PGS4worldω90,84/KCCsupportFAIL → rejected; production Rapier unchanged. Strict whole-world thin25/35 acceptance добавлен в ordinary tests и остаётся red. A–C не accepted; D не выполнялся.
+
 ## Runtime продолжение — mass-aware COM support pressure
 
 Capturedmicroshinmass2.508mg received10.464Nsstandingweight→beforestepvY−4.172million. Narrowfix supportImpulseCapacity=actualpartmass×4, newstanding+landingcombinedperpartstep, oldtotal16/32/perbody8/16capsandzero-torqueCOMmodelpreserved. Existingvelocityuntouched/noheuristicdeletion/contactbypass/eigenframephysicschange.50/80/120kgfixture/100jumpsrealplatform/pile oldbudgetsPASS. Exactfragmentpropertiesfrombirth3seedsnotstable/keptOFF; inputfix3seed45sremainingv19.88–79.53/ω90–1570stillFAIL25/35. Records3.2isolatehistory, full336unit/91browserPASSwithonepreservedangularFAILeach/buildPASS; THIN_PHYSICS.md. Nativeeigenframe/contactfixstillrequiresisolatedrebuilddecision.

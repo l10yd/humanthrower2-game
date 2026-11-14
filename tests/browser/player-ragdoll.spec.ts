@@ -3,17 +3,26 @@ test('targeted NPC drop, stable visual IDs, pause and won QTE recovery',async({p
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
   await page.goto('/?debug');await expect(page.locator('#start')).toBeEnabled();await page.locator('#start').click();
-  await page.evaluate(()=>{const g=window.humanthrower;g.scheduler.next=g.scheduler.nextBurst=g.chaos.nextEvent=g.chaos.nextWeapon=1e9;});
+  await page.locator('#pause').click();
+  await page.evaluate(()=>{const g=window.humanthrower;g.scheduler.next=g.scheduler.nextBurst=g.chaos.nextEvent=g.chaos.nextWeapon=1e9;g.now=0;});
   const visualIds=await page.evaluate(()=>{
     const r=window.humanthrower.renderer as unknown as {playerMeshes:Map<string,{uuid:string}>};
     return [...r.playerMeshes.values()].map(m=>m.uuid);
   });
+  // Keep the real impact action, but run the resulting drop in deterministic
+  // fixed ticks. RAF/poll latency previously changed the pile pose at pause and
+  // could produce an island wider than the cup's valid translation region.
+  await page.evaluate(()=>{window.humanthrower.state='RUNNING';});
   await page.locator('#impact').click();
-  await expect.poll(()=>page.evaluate(()=>window.humanthrower.player.ragdoll.down),{timeout:25000}).toBe(true);
+  await page.evaluate(()=>{
+    const g=window.humanthrower;g.pause();g.state='RUNNING';
+    for(let i=0;i<300&&!g.player.ragdoll.down;i++)(g as unknown as {fixedUpdate():void}).fixedUpdate();g.pause();
+  });
+  expect(await page.evaluate(()=>window.humanthrower.player.ragdoll.down)).toBe(true);
   const hit=await page.evaluate(()=>window.humanthrower.debugSnapshot());
   expect(hit.knockdowns).toBeGreaterThan(0);expect(hit.playerParts).toBe(11);expect(hit.playerVisualParts).toBe(11);
   expect(await page.evaluate(()=>[...(window.humanthrower.renderer as unknown as {playerMeshes:Map<string,{uuid:string}>}).playerMeshes.values()].map(m=>m.uuid))).toEqual(visualIds);
-  await page.locator('#pause').click();const paused=await page.evaluate(()=>window.humanthrower.debugSnapshot());
+  const paused=await page.evaluate(()=>window.humanthrower.debugSnapshot());
   await page.waitForTimeout(500);expect(await page.evaluate(()=>window.humanthrower.debugSnapshot())).toEqual(paused);
   await page.screenshot({path:'test-results/player-ragdoll.png'});
   const moved=await page.evaluate(()=>{

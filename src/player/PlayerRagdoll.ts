@@ -21,6 +21,10 @@ export class PlayerRagdoll {
   recoveryContact=false;effortPulse=0;
   damage=new PlayerDamage();qteProgress=0;poseProgress=0;
   private riseOrigin=new Map<number,{position:Vec3;rotation:ReturnType<Part['body']['rotation']>}>();
+  // Cumulative per-player diagnostic survives a nonfatal cut/rebuilt rig; each
+  // measured recovery records its own starting value.
+  private forcedBlockedSeconds=0;
+  get recoveryBlockedSeconds(){return this.forcedBlockedSeconds;}
   private forcedStarted=-Infinity;private forcedDuration:number=CONFIG.forcedRecovery.duration;private forcedTarget:RecoveryTarget|null=null;
   get recoveryDeadline(){return this.forcedTarget?this.forcedStarted+this.forcedDuration:null;}
   continueWonRecovery(remaining:number){this.forcedDuration=Math.max(CONFIG.dt,remaining);}
@@ -278,6 +282,14 @@ export class PlayerRagdoll {
     const poses=this.parts.map(p=>{const from=this.forcedOrigin.get(p.id)!,to=target.parts.find(v=>v.name===p.limb)!;return {p,position:add(mul(from.position,1-smooth),mul(to.position,smooth)),rotation:slerp(from.rotation,identity,smooth)};});
     const geometry=this.standingGeometry();
     this.spaceImpulse=ejectRecoveryDebris(this.physics,[...poses.map(v=>({shape:v.p.collider.shape,position:v.position,rotation:v.rotation})),uprightVolume(geometry.shape,add(target.center,vec(0,geometry.offset,0)))],target.center);
+    if(this.physics.recoveryQueries.blockedIslands){
+      // Keep the won effort and retained kinematics, but do not drive them into
+      // debris when the cup has no verified destination. Resume the stroke after
+      // space is freed; wall clocks never affect candidate order.
+      this.blocked=true;this.forcedStarted+=dt;this.forcedBlockedSeconds+=dt;this.poseProgress=Math.max(0,(now-this.forcedStarted)/this.forcedDuration);
+      for(const p of this.parts){p.body.setNextKinematicTranslation(p.body.translation());p.body.setNextKinematicRotation(p.body.rotation());}
+      return;
+    }
     for(const pose of poses){pose.p.body.setNextKinematicTranslation(pose.position);pose.p.body.setNextKinematicRotation(pose.rotation);}
   }
   arcadeRecoveryRequired=false;
@@ -409,9 +421,11 @@ export class PlayerRagdoll {
   }
   afterStep(now:number):RecoveryTarget|null {
     if(this.dead)return null;
+    if(this.forcedTarget&&this.blocked)return null;
     if(this.forcedTarget&&now-this.forcedStarted>=this.forcedDuration-1e-6){
       const geometry=this.standingGeometry();
       this.spaceImpulse+=ejectRecoveryDebris(this.physics,[uprightVolume(geometry.shape,add(this.forcedTarget.center,vec(0,geometry.offset,0)))],this.forcedTarget.center);
+      if(this.blocked||this.physics.recoveryQueries.blockedIslands)return null;
       return this.forcedTarget;
     }
     if(this.arcadeRecoveryRequired&&this.qteProgress<=0)return null;

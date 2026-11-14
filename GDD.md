@@ -6,6 +6,10 @@
 **Статус:** правила и стартовые значения для реализации и плейтестов; не отчёт о готовом прототипе.  
 **Основание:** `task.txt`, визуальный референс `image.jpg`, дополнение заказчика: «реально темная кровавая атмосфера с кровью типа manhunt».
 
+### Текущий A–C recovery contract (rules3.9)
+
+ВыигрышQTE сохраняется, но island переводится только в destination, свободный от других dynamic/kinematic тел и внутри чаши. Если свободного места нет, active1s straightening clock приостанавливается на fixed ticks; tissue/win сохраняются, KCC handoff не происходит до clearance. Это explicit arcade destination translation, не continuous physical sweep. Подробнее [docs/MVP_CHECKPOINT_6.md](docs/MVP_CHECKPOINT_6.md). Extreme thin survivors не удаляются/не утолщаются скрыто; строгая physics acceptance всё ещё blocked. ЭтапD не выполнялся.
+
 ### Актуальное дополнение: автоматическое QTE-выползание (итерация 24)
 
 Userpriorityнадпрежним«100%потомдержиA/D»:полныйQTEснабжаетsupportedавтоматическоевыползаниекlegalstandingdestinationдо2мрядом, noextra tapsneeded. БлижайшиеactualNPCblockers≤4 получаютtinyboundedhorizontal/depthpush180Н·dt/.8m/sspeedgain, никакогоудаления/posewrites. Послеhandoffпомощьещё1.5с, затемoff; ordinaryidleнеpushes. Walls/fixedclosedroofstillblocks, lateropeningcontinuesfullQTE, zero-legcrawlretained. Mirror1–3realNPC≤6srecoverygaitfixtures/ChromiumPASS. Records2.6-qte-auto-escape, full211unitPASS/1angularFAIL,45browserPASS/1angularFAIL,buildPASS. Необещаетescapeизполностьюзакрытойнеподвижнойкамеры и незакрываетnativeangularMVPgate.

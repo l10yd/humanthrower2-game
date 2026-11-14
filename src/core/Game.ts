@@ -1,3 +1,4 @@
+import { HudCadence } from './HudCadence';
 import { AcidSystem } from '../gameplay/AcidSystem';
 import { RowWarnings,rowWarningText } from '../gameplay/RowWarnings';
 import { SimulationProfiler } from './SimulationProfiler';
@@ -21,6 +22,7 @@ import { PlayerController } from '../player/PlayerController';
 import { RetroRenderer } from '../rendering/RetroRenderer';
 import { RowDetector } from '../grid/RowDetector';
 import { OccupancyRaster } from '../grid/OccupancyRaster';
+import {RowPreparationWorker} from '../slicing/RowPreparationWorker';
 import { clearRows } from '../slicing/ClearTransaction';
 import { axisAngle, vec } from '../slicing/Math';
 import { SpawnPlanner, type DropPlan } from '../npc/SpawnPlanner';
@@ -44,7 +46,9 @@ import type { ReferenceCharacter } from '../assets/ReferenceCharacter';
 import type { IndustrialShaft } from '../assets/IndustrialShaft';
 export type GameState='TITLE'|'RUNNING'|'DYING'|'PAUSED'|'GAME_OVER'|'ERROR';
 export class Game {
+  rowPreparation=new RowPreparationWorker(new URLSearchParams(location.search).has('geometry-worker'));
   rowWarnings=new RowWarnings();
+  hudCadence=new HudCadence();
   profiler=new SimulationProfiler();
   preferences=new GameplayPreferences(browserGameplayStorage());pauseMenu:PauseMenu;
   physics=new PhysicsManager();factory=new RagdollFactory(this.physics,CONFIG.spawn.npcScale,CONFIG.spawn.npcMassMultiplier);player=new PlayerController(this.physics,true,this.preferences.settings.headControlFaults);
@@ -177,6 +181,7 @@ export class Game {
   private syncChaosUI(){
     const panel=document.querySelector<HTMLElement>('#chaos-banner')!,event=this.chaos.current;
     panel.hidden=this.mode!=='demo'||!event||this.state!=='RUNNING';
+    if(panel.hidden){panel.textContent='';return;}
     if(event){panel.dataset.warning=String(!event.started);panel.textContent=`${event.started?'⚡':'⚠'} ${CHAOS_EVENTS[event.kind]} · ${Math.max(0,(event.started?event.endsAt:event.startsAt)-this.now).toFixed(1)} с${!event.started?' — берегись!':''}`;}
   }
   private syncQteUI(){
@@ -230,7 +235,7 @@ export class Game {
   newSession(){const seed=crypto.getRandomValues(new Uint32Array(1))[0];this.restart(seed);}
   restart(seed=this.sessionSeed){
     if(!Number.isInteger(seed)||seed<0||seed>0xffffffff)throw Error('Session seed must be an unsigned 32-bit integer');
-    this.sessionSeed=seed;this.profiler.reset();this.rowWarnings.reset();this.gameplaySettingsChanged=false;this.runDetails=null;this.completedSettings=null;
+    this.sessionSeed=seed;this.rowPreparation.reset();this.profiler.reset();this.rowWarnings.reset();this.gameplaySettingsChanged=false;this.runDetails=null;this.completedSettings=null;
     this.initialSettings={mode:this.mode,npcMode:this.npcMode,headControlFaults:this.preferences.settings.headControlFaults};
     this.tutorial.reset();this.audio.resetSession();this.input.clear();this.player.dispose();this.physics.dispose();this.physics=new PhysicsManager();this.factory=new RagdollFactory(this.physics,CONFIG.spawn.npcScale,CONFIG.spawn.npcMassMultiplier);this.player=new PlayerController(this.physics,this.mode==='demo',this.preferences.settings.headControlFaults);
     this.saw=new SawController(this.physics,this.player,true);this.freshDrops=new FreshDropMotion(this.physics);this.living=new LivingNpcs(this.physics,this.npcMode);this.spawnForms={};this.weapons=new WeaponController(this.physics,this.player,this.saw,this.mode==='demo');this.chaos=new ChaosDirector(randomSeed(this.sessionSeed^0xabcdef));this.supplies=new WeaponSupplies(randomSeed(this.sessionSeed^0x51f15e));this.medicalRandom=randomSeed(this.sessionSeed^0x6d3d);this.medicalUsed=0;this.acid.reset();this.sky=new SkyDrops();this.culled=0;this.nextChaosDrop=this.nextHazard=0;this.renderer.cameraShake=0;this.saw.arcadeGuardEnabled=this.mode==='demo';this.gore.reset();this.syncSawUI();this.deathRemaining=0;this.deathAt=null;this.pausedState='RUNNING';this.syncQteUI();
@@ -361,7 +366,7 @@ export class Game {
       const playerHit=this.mode==='demo'?playerIntersectsRows(this.player,due):due.some(r=>this.player.current.y>=r&&this.player.current.y<r+1);
       const bloodSources=[...this.physics.parts.values()].filter(p=>p.owner==='npc'&&due.some(r=>{const c=add(p.body.translation(),rotate(massProperties(p.poly).center,p.body.rotation()));return c.y>=r&&c.y<=r+1;})).map(p=>({...p.body.worldCom()}));
       if(this.mode==='demo'&&playerHit){this.player.prepareRowDeath(this.now);this.physics.world.propagateModifiedBodyPositionsToColliders();}
-      const result=this.profiler.measure('rowClear',()=>clearRows(this.physics,due,this.mode==='demo'?'solver':'legacy',this.mode==='demo'&&playerHit,this.player.damage.headImmune?['head']:[]));bloodSources.forEach(p=>this.gore.burst(p,vec(0,1,0),30));this.detector.committed(due,this.now);
+      const result=this.profiler.measure('rowClear',()=>clearRows(this.physics,due,this.mode==='demo'?'solver':'legacy',this.mode==='demo'&&playerHit,this.player.damage.headImmune?['head']:[],this.rowPreparation.cache));bloodSources.forEach(p=>this.gore.burst(p,vec(0,1,0),30));this.detector.committed(due,this.now);
       this.scoring.clear(result,this.now,this.difficulty.level(this.now,this.rows),this.mode==='technical'&&playerHit);
       if(this.mode==='demo'&&playerHit&&this.player.resumeAfterCut(this.now)){
         document.querySelector('#hint')!.textContent=`ПОВРЕЖДЕНИЕ · ${this.player.damage.mobility==='CRAWL'?'ног нет — ползи A/D':this.player.damage.mobility==='HOP'?'одна нога — передвигайся A/D':'хромота — A/D'} · голова и корпус целы, игра продолжается`;
@@ -371,6 +376,7 @@ export class Game {
       if(this.health<=0){this.beginDeath('RESILIENCE');return;}
       document.querySelector('#hint')!.textContent=`Очищено ${due.length} рядов · ${result.removedVolume.toFixed(3)} м³. Конечности и части вне полосы остаются — складывай следующий ряд.`;
     }
+    this.profiler.measure('rowPreflight',()=>this.rowPreparation.update(this.physics.parts.values(),this.detector.rows,this.now));
     const event=this.scheduler.tick(this.now,this.warnings.length,this.random);
     if(event){this.planDrop(event.delay);if(event.double)this.planDrop(event.delay);}
     // At most two actual allocations per fixed step. Failed geometry/budget waits, never
@@ -432,17 +438,22 @@ export class Game {
       catch(e){this.pauseMenu.close();this.state='ERROR';this.audio.setRunning(false);this.weapons.cancel();this.input.clear();document.querySelector('#error')!.textContent=String(e);document.querySelector<HTMLElement>('#overlay')!.hidden=false;document.querySelector('#start')!.textContent='Сессия остановлена — нажмите R';}
       if(this.accumulator>=CONFIG.dt){this.droppedTime+=this.accumulator;this.accumulator%=CONFIG.dt;}
     }
-    this.syncQteUI();this.syncTutorialUI();this.syncSawUI();this.syncChaosUI();
-    const rowText=this.state==='RUNNING'||this.state==='PAUSED'&&this.pausedState==='RUNNING'?rowWarningText(this.detector.rows,this.now):'';
-    const rowBanner=document.querySelector<HTMLElement>('#row-warning')!;rowBanner.hidden=!rowText;
-    if(rowBanner.textContent!==rowText)rowBanner.textContent=rowText;
     this.renderer.acidLevel=this.mode==='demo'?this.acid.level:0;
     this.renderer.skyDrops=this.sky.items;
     this.renderer.chaosWarning=this.state==='RUNNING'?this.chaos.current:null;
     if(!this.contextLost)this.renderer.render(this.physics.parts.values(),this.player,this.detector.rows,this.state==='DYING'||this.state==='GAME_OVER'?[]:this.warnings.map(w=>w.x),this.visualTime,this.state==='RUNNING'||this.state==='DYING'?this.accumulator/CONFIG.dt:1,this.saw,this.gore,this.weapons);
+    // Publish UI after its corresponding scene submission: a state transition
+    // must not expose the warning banner while its hazard lane is still stale.
+    if(this.hudCadence.due(timestamp,this.state)){
+      this.syncQteUI();this.syncTutorialUI();this.syncSawUI();this.syncChaosUI();
+      const rowText=this.state==='RUNNING'||this.state==='PAUSED'&&this.pausedState==='RUNNING'?rowWarningText(this.detector.rows,this.now):'';
+      const rowBanner=document.querySelector<HTMLElement>('#row-warning')!;rowBanner.hidden=!rowText;
+      if(rowBanner.textContent!==rowText)rowBanner.textContent=rowText;
+    }
     if(timestamp-this.lastHud>200) {
-      const sleeping=[...this.physics.parts.values()].filter(p=>p.body.isSleeping()).length;
-      document.querySelector('#stats')!.textContent=document.querySelector<HTMLElement>('#app')!.dataset.debug==='true'?`${Math.floor(this.now)} с · ${this.drops} NPC · ${this.physics.parts.size} частей (${sleeping} спят) · ${this.rows} рядов · ${this.scoring.total(this.now)} очков · ×${this.scoring.multiplier(this.now).toFixed(2)} · L${this.difficulty.level(this.now,this.rows)} · ${this.mode==='demo'?`прочность ${this.health}% · воздух ${this.survival.air.toFixed(1)} с`:`стойкость ${this.health}/3`} · ${this.player.state}${this.weapons.enabled?` · ${WEAPONS[this.weapons.selected]} ${this.weapons.unavailable?'— нет руки':this.weapons.active?'атака':'[E / ЛКМ]'}`:''} · физика ${this.physics.stepMs.toFixed(1)} мс · игрок ${this.playerUpdateMs.toFixed(1)} мс${this.scheduler.burst?' · ШКВАЛ':''}`:`${this.scoring.total(this.now)} ОЧКОВ · ${Math.floor(this.now)} с · ${this.rows} РЯДОВ · ×${this.scoring.multiplier(this.now).toFixed(2)}\n${this.mode==='demo'?`ТЕЛО ${this.health}% · ВОЗДУХ ${this.survival.air.toFixed(1)} с`:`СТОЙКОСТЬ ${this.health}/3`} · ${this.drops} СБРОСОВ`;
+      const debug=document.querySelector<HTMLElement>('#app')!.dataset.debug==='true';
+      const sleeping=debug?[...this.physics.parts.values()].filter(p=>p.body.isSleeping()).length:0;
+      document.querySelector('#stats')!.textContent=debug?`${Math.floor(this.now)} с · ${this.drops} NPC · ${this.physics.parts.size} частей (${sleeping} спят) · ${this.rows} рядов · ${this.scoring.total(this.now)} очков · ×${this.scoring.multiplier(this.now).toFixed(2)} · L${this.difficulty.level(this.now,this.rows)} · ${this.mode==='demo'?`прочность ${this.health}% · воздух ${this.survival.air.toFixed(1)} с`:`стойкость ${this.health}/3`} · ${this.player.state}${this.weapons.enabled?` · ${WEAPONS[this.weapons.selected]} ${this.weapons.unavailable?'— нет руки':this.weapons.active?'атака':'[E / ЛКМ]'}`:''} · физика ${this.physics.stepMs.toFixed(1)} мс · игрок ${this.playerUpdateMs.toFixed(1)} мс${this.scheduler.burst?' · ШКВАЛ':''}`:`${this.scoring.total(this.now)} ОЧКОВ · ${Math.floor(this.now)} с · ${this.rows} РЯДОВ · ×${this.scoring.multiplier(this.now).toFixed(2)}\n${this.mode==='demo'?`ТЕЛО ${this.health}% · ВОЗДУХ ${this.survival.air.toFixed(1)} с`:`СТОЙКОСТЬ ${this.health}/3`} · ${this.drops} СБРОСОВ`;
       document.querySelector<HTMLElement>('#stats')!.dataset.danger=String(this.mode==='demo'&&(this.health<30||this.survival.air<2));
       const messages={ACTIVE:'',RAGDOLL:'УДАР — ragdoll',CRAWLING:'ПРИЖАТ — жми ПРОБЕЛ: заполни круг «ВСТАТЬ» для гарантированного выхода',GETTING_UP:'ПОДНИМАЕТСЯ — ПРОБЕЛ заполняет круг выхода',RECOVERING:'ВОССТАНАВЛИВАЕТСЯ — скорость снижена'};
       const overflow=this.loss.countdown(this.now),pressure=this.squeeze.pressureSeconds(this.now);
@@ -466,5 +477,5 @@ export class Game {
     npcMode:this.npcMode,mode:this.mode,air:this.survival.air,buried:this.buried,impactHits:this.survival.hits,
     score:this.scoring.total(this.now),health:this.health,combo:this.scoring.multiplier(this.now),result:this.result,
     overflow:this.loss.countdown(this.now),squeeze:this.squeeze.snapshot};}
-  dispose(){cancelAnimationFrame(this.request);this.pauseMenu.dispose();this.audio.dispose();this.input.dispose();for(const cleanup of this.cleanups)cleanup();this.cleanups=[];this.player.dispose();this.physics.dispose();this.renderer.dispose();}
+  dispose(){cancelAnimationFrame(this.request);this.rowPreparation.dispose();this.pauseMenu.dispose();this.audio.dispose();this.input.dispose();for(const cleanup of this.cleanups)cleanup();this.cleanups=[];this.player.dispose();this.physics.dispose();this.renderer.dispose();}
 }

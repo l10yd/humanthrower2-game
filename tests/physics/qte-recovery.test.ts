@@ -22,6 +22,26 @@ it('a won QTE remains blocked by an immovable closed roof, then rises within one
   for(let i=0;i<60&&c.ragdoll.down;i++)step();expect(c.ragdoll.down).toBe(false);expect(c.collider.isEnabled()).toBe(true);expect(c.qte.active).toBe(false);expect(p.numericFaults).toBe(0);
  }finally{c.dispose();p.dispose();}
 });
+it('won effort pauses safely when a kinematic enclosure leaves no debris destination, then resumes without tissue loss',()=>{
+ const p=new PhysicsManager(),c=new PlayerController(p,true);let now=0;
+ const step=(pressed=false)=>{p.snapshot();c.update({...idle,pressed},now,CONFIG.dt);p.step();now+=CONFIG.dt;c.afterStep(now);};
+ try{
+  c.collider.setEnabled(false);c.ragdoll.knockDown(c.current,vec(),now);for(let i=0;i<30;i++)step();
+  for(let i=0;i<30&&!c.qte.ready;i++)step(true);expect(c.qte.ready).toBe(true);
+  const body=p.world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(0,8,0));
+  const obstacle=p.world.createCollider(RAPIER.ColliderDesc.cuboid(4.49,7.99,1.19),body);
+  // A dynamic blocker intersects the future standing volume and cannot be moved
+  // into any destination while this non-ejectable obstacle fills the cup.
+  const debris=p.createPart(box(.2,.2,.2),{position:vec(0,2,0),rotation:identity},3,99,'blocked');debris.body.sleep();
+  const ids=c.ragdoll.parts.map(p=>p.id),tissue={...c.damage.tissue};
+  c.update(idle,now,CONFIG.dt);expect(c.ragdoll.blocked).toBe(true);expect(c.ragdoll.recoveryBlockedSeconds).toBe(CONFIG.dt);
+  expect(c.ragdoll.parts.every(p=>p.body.isKinematic()&&JSON.stringify(p.body.nextTranslation())===JSON.stringify(p.body.translation()))).toBe(true);
+  expect(c.ragdoll.afterStep(now+2)).toBeNull();expect(c.qte.ready).toBe(true);expect(c.ragdoll.parts.map(p=>p.id)).toEqual(ids);
+  p.world.removeCollider(obstacle,true);p.world.removeRigidBody(body);
+  for(let i=0;i<61&&c.ragdoll.down;i++)step();
+  expect(c.ragdoll.down).toBe(false);expect(c.damage.tissue).toEqual(tissue);expect(p.parts.has(debris.id)).toBe(true);
+ }finally{c.dispose();p.dispose();}
+});
 it('a nonfatal row cut during won recovery preserves 100% and the original one-second deadline',()=>{
  const p=new PhysicsManager(),c=new PlayerController(p,true);let now=0;
  const step=(pressed=false)=>{c.update({...idle,pressed},now,CONFIG.dt);p.step();now+=CONFIG.dt;c.afterStep(now);};

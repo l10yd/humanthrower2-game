@@ -2,7 +2,7 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import { addGeometry,assertWorldGeometry,DEFAULT_GEOMETRY_LIMITS,emptyGeometry,geometryUsage,type GeometryLimits } from '../slicing/GeometryBudget';
 import { validateConnector,validateJointFrame,type ConnectorVolume } from './Connector';
 import { CONFIG } from '../core/Config';
-import { massProperties, validate, vertices, type ConvexPolyhedron } from '../slicing/ConvexClipper';
+import { GeometryRead,massProperties, validate, vertices, type ConvexPolyhedron } from '../slicing/ConvexClipper';
 import { add, rotate, identity, vec, type Vec3, type Quat } from '../slicing/Math';
 import { slerp } from '../slicing/Quaternion';
 import { exactMassProperties } from './ExactMass';
@@ -41,15 +41,18 @@ export class PhysicsManager {
   readonly geometryLimits:GeometryLimits={...DEFAULT_GEOMETRY_LIMITS};
   get geometryUsage(){return {...this.usedGeometry};}
   /** Preflight final post-transaction geometry, excluding replaced sources. */
-  checkGeometryBudget(removedIds:readonly number[],added:readonly ConvexPolyhedron[]){
+  checkGeometryBudget(removedIds:readonly number[],added:readonly ConvexPolyhedron[],read?:GeometryRead){
     let usage={...this.usedGeometry};for(const id of new Set(removedIds)){const old=this.geometryById.get(id);if(old)usage=addGeometry(usage,old,-1);}
-    for(const poly of added)usage=addGeometry(usage,geometryUsage(poly,this.geometryLimits));assertWorldGeometry(usage,this.geometryLimits);return usage;
+    for(const poly of added)usage=addGeometry(usage,geometryUsage(poly,this.geometryLimits,read));assertWorldGeometry(usage,this.geometryLimits);return usage;
   }
   private colliderParts=new Map<number,Part>(); private nextId=1; private nextJoint=1;
   private components=new Map<number,number>(); private componentsDirty=true;
   private componentMembers=new Map<number,Part[]>();
   clearQueries={scannedParts:0,clippedParts:0,skippedParts:0};
-  recoveryQueries={scannedParts:0,candidateParts:0,narrowTests:0,searchCandidates:0,movedIslands:0};
+  /** Isolated route experiment hook; undefined in production. Never used as a
+   * wall-clock budget or contact-mask override. */
+  recoveryTranslationCheck:((members:readonly Part[],delta:Vec3,volumes:readonly {shape:RAPIER.Shape;position:Vec3;rotation:Quat}[],center:Vec3)=>boolean)|undefined;
+  recoveryQueries={scannedParts:0,candidateParts:0,narrowTests:0,searchCandidates:0,movedIslands:0,blockedIslands:0};
   // NPC parts collide before AND after a cut. Player articulation keeps its
   // existing connected-component filter to preserve supported recovery motors.
   npcSelfContactsEnabled=true;
@@ -102,9 +105,15 @@ export class PhysicsManager {
     this.world.createCollider(RAPIER.ColliderDesc.cuboid(h.x,h.y,h.z).setTranslation(p.x,p.y,p.z)
       .setFriction(friction).setRestitution(0));
   }
+  private allocationRead:GeometryRead|undefined;
+  /** Diagnostic reference mode; does not alter geometry or native settings. */
+  shareAllocationGeometry=true;
+  allocationQueries={reads:0,welds:0};
   prepareCollider(poly:ConvexPolyhedron,density:number):RAPIER.ColliderDesc {
-    geometryUsage(poly,this.geometryLimits);
-    validate(poly);const ps=vertices(poly);
+    const read=this.allocationRead??(this.shareAllocationGeometry?new GeometryRead():undefined);
+    geometryUsage(poly,this.geometryLimits,read);
+    if(read)validate(poly,read);else validate(poly);const ps=read?read.vertices(poly):vertices(poly);
+    if(read&&!this.allocationRead){this.allocationQueries.reads+=read.reads;this.allocationQueries.welds+=read.welds;}
     const coords=new Float32Array(ps.flatMap(p=>[p.x,p.y,p.z]));
     let desc=RAPIER.ColliderDesc.convexHull(coords);
     // ColliderDesc defers hull construction until intoRaw/createCollider; non-null desc
@@ -124,10 +133,16 @@ export class PhysicsManager {
     return desc.setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS).setContactForceEventThreshold(300).setDensity(density).setFriction(CONFIG.physics.friction).setRestitution(0)
       .setRestitutionCombineRule(RAPIER.CoefficientCombineRule.Min).setActiveHooks(RAPIER.ActiveHooks.FILTER_CONTACT_PAIRS);
   }
-  createPart(poly:ConvexPolyhedron,pose:Pose,mass:number,npcId:number,limb:string,generation=0,density?:number,owner:Part['owner']='npc',staged=false):Part {
+  createPart(poly:ConvexPolyhedron,pose:Pose,mass:number,npcId:number,limb:string,generation=0,density?:number,owner:Part['owner']='npc',staged=false,preparationRead?:GeometryRead):Part {
+    const previous=this.allocationRead,read=this.shareAllocationGeometry?(preparationRead??new GeometryRead()):undefined;this.allocationRead=read;
+    const reads=read?.reads??0,welds=read?.welds??0;
+    try{return this.allocatePart(poly,pose,mass,npcId,limb,generation,density,owner,staged,read);}
+    finally{if(read){this.allocationQueries.reads+=read.reads-reads;this.allocationQueries.welds+=read.welds-welds;}this.allocationRead=previous;}
+  }
+  private allocatePart(poly:ConvexPolyhedron,pose:Pose,mass:number,npcId:number,limb:string,generation:number,density:number|undefined,owner:Part['owner'],staged:boolean,read:GeometryRead|undefined):Part {
     // Staging is reserved for preflighted replacement transactions.
-    const geometry=geometryUsage(poly,this.geometryLimits);
-    if(!staged){this.checkGeometryBudget([],[poly]);if(this.parts.size+1>CONFIG.physics.hardLimit)throw Error('Body budget exceeded');}
+    const geometry=geometryUsage(poly,this.geometryLimits,read);
+    if(!staged){this.checkGeometryBudget([],[poly],read);if(this.parts.size+1>CONFIG.physics.hardLimit)throw Error('Body budget exceeded');}
     const rho=density??mass/massProperties(poly).volume;const desc=this.prepareCollider(poly,rho);
     // Bit 2 belongs to the player-only ceiling. NPCs enter from overhead while
     // upright/player ragdoll colliders keep full ceiling collisions.
@@ -394,7 +409,7 @@ export class PhysicsManager {
     const pa=add(a.body.translation(),rotate(j.anchorA,a.body.rotation())),pb=add(b.body.translation(),rotate(j.anchorB,b.body.rotation()));
     return Math.hypot(pa.x-pb.x,pa.y-pb.y,pa.z-pb.z);
   });}
-  dispose(){this.contactLoad.reset();this.impacts.reset();this.eventQueue.free();this.world.free();this.parts.clear();this.geometryById.clear();this.usedGeometry=emptyGeometry();this.joints.clear();this.colliderParts.clear();this.detachedPairs.clear();this.neighborPairs.clear();this.components.clear();this.componentMembers.clear();
+  dispose(){this.recoveryTranslationCheck=undefined;this.contactLoad.reset();this.impacts.reset();this.eventQueue.free();this.world.free();this.parts.clear();this.geometryById.clear();this.usedGeometry=emptyGeometry();this.joints.clear();this.colliderParts.clear();this.detachedPairs.clear();this.neighborPairs.clear();this.components.clear();this.componentMembers.clear();
     this.diagnosticsBefore.clear();this.diagnosticsWorldBefore=null;this.faultSnapshot=null;this.peakAngularFault=null;this.peakSpeedFault=null;this.peakEnergyFault=null;this.separationFault=null;}
 }
 export const initialPose=(position:Vec3,rotation:Quat=identity):Pose=>({position,rotation});

@@ -1,22 +1,19 @@
 import { connectorIntersectsSlabs } from '../physics/Connector';
 import { CONFIG } from '../core/Config';
-import { clip, contains, massProperties, subtractSlabs, vertices, type ConvexPolyhedron, type Interval } from './ConvexClipper';
-import { add, conjugate, dot, mul, pointVelocity, rotate, vec } from './Math';
+import { GeometryRead,contains, massProperties, type ConvexPolyhedron, type Interval } from './ConvexClipper';
+import {prepareRowCut,type PreparedCut} from './RowPreparation';
+export {belowFragmentScale} from './RowPreparation';
+import { add, conjugate, pointVelocity, rotate, vec } from './Math';
 import { PhysicsManager, type Joint, type Part, type Pose } from '../physics/PhysicsManager';
 interface Replacement { source:Part; pose:Pose; survivors:ConvexPolyhedron[] }
-export function belowFragmentScale(poly:ConvexPolyhedron):boolean {
-  // Most intact limbs are far above the conjunctive dust volume threshold.
-  // Do not weld vertices quadratically just to confirm their already-large mass.
-  if(massProperties(poly).volume>=1e-6)return false;
-  const points=vertices(poly),size=Math.hypot(...(['x','y','z'] as const).map(k=>Math.max(...points.map(p=>p[k]))-Math.min(...points.map(p=>p[k]))));
-  return size<.015;
-}
 export interface ClearResult { transactionId:number; removedVolume:number; removedVolumeByRow:Record<number,number>; fragments:number; rows:number[] }
+export interface CutPreparationLookup {get(source:Part,pose:Pose,rows:readonly number[]):PreparedCut|undefined}
 /** Prepare geometry, then stage all fallible allocations before deleting ANY original body. */
-export function clearRows(physics:PhysicsManager,rows:number[],contacts:'legacy'|'solver'='legacy',includePlayer=false,protectedPlayerLimbs:readonly string[]=[]):ClearResult {
+export function clearRows(physics:PhysicsManager,rows:number[],contacts:'legacy'|'solver'='legacy',includePlayer=false,protectedPlayerLimbs:readonly string[]=[],preparation?:CutPreparationLookup):ClearResult {
   const sorted=[...new Set(rows)].sort((a,b)=>a-b);
   if(!sorted.length||sorted.some(r=>!Number.isInteger(r)||r<0||r>=CONFIG.rows.count))throw Error('Invalid row');
   const work=physics.clearQueries;work.scannedParts=work.clippedParts=work.skippedParts=0;
+  const read=physics.shareAllocationGeometry?new GeometryRead():undefined;
   const intervals:Interval[]=sorted.map(r=>({lower:r,upper:r+1}));const replacements:Replacement[]=[];
   let removedVolume=0;const removedVolumeByRow:Record<number,number>=Object.fromEntries(sorted.map(r=>[r,0]));
   for(const source of physics.parts.values()) {
@@ -25,25 +22,13 @@ export function clearRows(physics:PhysicsManager,rows:number[],contacts:'legacy'
     const pose={position:{...source.body.translation()},rotation:{...source.body.rotation()}};
     const n=rotate(vec(0,1,0),conjugate(pose.rotation));
     const local=intervals.map(i=>({lower:i.lower-pose.position.y,upper:i.upper-pose.position.y}));
-    let min=Infinity,max=-Infinity;
-    for(const face of source.poly.faces)for(const point of face.vertices){const y=dot(n,point);min=Math.min(min,y);max=Math.max(max,y);}
-    // Conservative half-space interval rejection; same local plane arithmetic as
-    // subtractSlabs, without welding/clipping uncut parts throughout the shaft.
-    // Dust outside the row still follows the existing conjunctive cleanup rule.
-    if(local.every(i=>max<i.lower-1e-9||min>i.upper+1e-9)&&!belowFragmentScale(source.poly)){work.skippedParts++;continue;}
+    const prepared=source.owner==='npc'?preparation?.get(source,pose,sorted):undefined;
+    const cut=prepared??prepareRowCut(source.poly,n,local,source.owner==='npc',read??new GeometryRead());
+    if(cut.skipped){work.skippedParts++;continue;}
     work.clippedParts++;
-    const kept=subtractSlabs(source.poly,n,local);
-    // TDD numerical-dust rule is conjunctive: a long thin strip must survive even if
-    // its volume is tiny. Only sub-15mm AND sub-1e-6m³ scraps are below gameplay scale.
-    const survivors=kept.filter(poly=>!belowFragmentScale(poly));
-    const original=massProperties(source.poly).volume;
-    const removed=original-survivors.reduce((v,p)=>v+massProperties(p).volume,0);
+    const {survivors,removed}=cut;
     if(removed<1e-12)continue;
-    if(source.owner==='npc')for(let i=0;i<sorted.length;i++) {
-      const below=clip(source.poly,n,local[i].upper);
-      const slab=below&&clip(below,mul(n,-1),-local[i].lower);
-      if(slab)removedVolumeByRow[sorted[i]]+=massProperties(slab).volume;
-    }
+    if(source.owner==='npc')for(let i=0;i<sorted.length;i++)removedVolumeByRow[sorted[i]]+=cut.byInterval[i];
     // createPart validates and prepares each survivor during the atomic staging
     // phase below. Preparing here too repeats hull validation/QuickHull, and the
     // descriptor was discarded. Any failure still rolls back before originals.
@@ -51,7 +36,7 @@ export function clearRows(physics:PhysicsManager,rows:number[],contacts:'legacy'
   }
   const finalCount=physics.parts.size-replacements.length+replacements.reduce((n,r)=>n+r.survivors.length,0);
   if(finalCount>CONFIG.physics.hardLimit)throw Error('Fragment budget exceeded: clear paused without mutation');
-  physics.checkGeometryBudget(replacements.map(r=>r.source.id),replacements.flatMap(r=>r.survivors));
+  physics.checkGeometryBudget(replacements.map(r=>r.source.id),replacements.flatMap(r=>r.survivors),read);
   const affected=new Set(replacements.map(r=>r.source.id));
   const severedConnectors=new Set<number>();
   for(const j of physics.joints.values()){
@@ -77,7 +62,7 @@ export function clearRows(physics:PhysicsManager,rows:number[],contacts:'legacy'
       const old=r.source,v={...old.body.linvel()},w={...old.body.angvel()},com={...old.body.worldCom()};
       const survivors:Part[]=[];
       for(const poly of r.survivors) {
-        const p=physics.createPart(poly,r.pose,0,old.npcId,old.limb,old.generation+1,old.density,old.owner,true);p.renderScale=old.renderScale;p.gameplayMassScale=old.gameplayMassScale;
+        const p=physics.createPart(poly,r.pose,0,old.npcId,old.limb,old.generation+1,old.density,old.owner,true,read);p.renderScale=old.renderScale;p.gameplayMassScale=old.gameplayMassScale;
         staged.push(p);survivors.push(p);p.body.recomputeMassPropertiesFromColliders();
         p.body.setAngvel(w,true);
         const newCom=add(r.pose.position,rotate(massProperties(poly).center,r.pose.rotation));
