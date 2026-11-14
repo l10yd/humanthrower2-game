@@ -7,8 +7,7 @@ import { RagdollFactory } from '../physics/RagdollFactory';
 import { add, conjugate, identity, length, mul, normalize, pointVelocity, rotate, sub, vec, type Vec3 } from '../slicing/Math';
 import { ejectRecoveryDebris,uprightVolume } from './ForcedRecovery';
 import { openRecoverySpace,recoveryEscapeAxis } from './RecoveryAssist';
-import { gameplayMass } from './GameplayMass';
-import { loadEffort, pileLoad } from './PileLoad';
+import { loadEffort, pileLoads } from './PileLoad';
 import { recoveryPathClear } from './RecoverySweep';
 import { CollisionQuery, nearbyColliders, shapeBounds } from './QueryBounds';
 import type { InputFrame } from './Input';
@@ -107,11 +106,11 @@ export class PlayerRagdoll {
   interruptRise(progress:number,now:number){this.qteProgress=progress;this.poseProgress=Math.min(this.poseProgress,progress);this.target=null;this.assistedRoot=null;this.riseOrigin.clear();this.locomotionReady=false;this.fullPoseSince=-Infinity;this.state='RAGDOLL';this.hitAt=now;this.poseMotors(false);}
   private external=(collider:RAPIER.Collider)=>collider.isEnabled()&&!collider.isSensor()&&this.physics.partForCollider(collider)?.owner!=='player';
   private query:CollisionQuery|undefined;
-  private free(shape:RAPIER.Shape,position:Vec3,staticOnly=false):boolean {
+  private free(shape:RAPIER.Shape,position:Vec3,staticOnly=false,query?:CollisionQuery):boolean {
     let free=true;
     const external=staticOnly?(c:RAPIER.Collider)=>this.external(c)&&!c.parent()?.isDynamic():this.external;
     // Direct contact queries deliberately avoid stale broad-phase caches after structural edits.
-    for(const c of nearbyColliders(this.physics,shapeBounds(shape,position,identity),external,staticOnly?undefined:this.query)){
+    for(const c of nearbyColliders(this.physics,shapeBounds(shape,position,identity),external,query??(staticOnly?undefined:this.query))){
       const contact=c.contactShape(shape,position,identity,0);
       if(contact&&contact.distance<-.002){free=false;break;}
     }return free;
@@ -119,6 +118,7 @@ export class PlayerRagdoll {
   recoveryTarget(staticOnly=false):RecoveryTarget|null {
     if(!this.down||this.damage.mobility==='CRAWL')return null;
     const external=staticOnly?(c:RAPIER.Collider)=>this.external(c)&&!c.parent()?.isDynamic():this.external;
+    const query=!staticOnly&&this.query?this.query:new CollisionQuery(this.physics,external);
     const pelvis=this.pelvis.body.translation(),geometry=this.standingGeometry();
     // Sample both feet as well as the root. A body crossing just one foot must
     // become a real support or be avoided, not trap the rise servo forever.
@@ -135,9 +135,9 @@ export class PlayerRagdoll {
       if(this.state!=='GETTING_UP'&&this.qteProgress<=0&&pelvis.y-groundY>.42*PLAYER_SCALE
         &&!(Math.abs(this.pelvis.body.rotation().w)>.94&&this.supported()))continue;
       const center=vec(x,groundY-geometry.bottom+.015,0),root=this.rootFromCenter(center);
-      if(!this.free(geometry.shape,add(center,vec(0,geometry.offset,0)),staticOnly))continue;
+      if(!this.free(geometry.shape,add(center,vec(0,geometry.offset,0)),staticOnly,query))continue;
       const plan=this.factory.build('normal',root,identity,this.options);
-      if(!plan.parts.every(p=>!this.damage.has(p.name)||this.free(this.shapeFor(p.name),p.position,staticOnly)))continue;
+      if(!plan.parts.every(p=>!this.damage.has(p.name)||this.free(this.shapeFor(p.name),p.position,staticOnly,query)))continue;
       return {center,root,parts:plan.parts};
     }
     return null;
@@ -183,6 +183,10 @@ export class PlayerRagdoll {
     this.locomotionReady=false;this.fullPoseSince=-Infinity;
     this.riseOrigin.clear();this.assistedRoot=null;this.target=null;this.motorMode='';this.dead=!this.damage.alive;
   }
+  refreshLoad(now:number){
+    const load=pileLoads(this.physics,this.parts);
+    this.loadMass=load.solver;this.gameplayLoadMass=load.gameplay;this.nextLoad=now+.1;
+  }
   update(input:InputFrame,now:number,dt:number) {
     this.escapeAxis=0;this.spaceImpulse=0;this.effortPulse*=Math.exp(-dt*12);
     this.refreshRecoveryContact();
@@ -195,7 +199,7 @@ export class PlayerRagdoll {
     if(this.dead)return;
     if(!this.down){if(this.state==='RECOVERING'&&now>=this.recoveryUntil)this.state='ACTIVE';return;}
     const presses=Math.max(0,Math.min(12,input.effortPresses??(input.pressed?1:0)));
-    if(now>=this.nextLoad){this.loadMass=pileLoad(this.physics,this.parts);this.gameplayLoadMass=pileLoad(this.physics,this.parts,gameplayMass);this.nextLoad=now+.1;}
+    if(now>=this.nextLoad)this.refreshLoad(now);
     this.presses=this.presses.filter(t=>now-t<1);
     for(let i=0;i<presses;i++)this.presses.push(now);
     if(this.presses.length>60)this.presses=this.presses.slice(-60);
@@ -429,7 +433,7 @@ export class PlayerRagdoll {
     if(this.alignedSince===-Infinity)this.alignedSince=now;
     return now-this.alignedSince>=.075?candidate:null;
   }
-  prepareDeath(center:Vec3,velocity:Vec3,now:number){if(!this.down)this.knockDown(center,velocity,now);for(const p of this.parts)if(p.body.isKinematic())p.body.setBodyType(RAPIER.RigidBodyType.Dynamic,true);this.forcedStarted=-Infinity;this.forcedTarget=null;this.forcedOrigin.clear();this.dead=true;this.poseMotors(false);}
+  prepareDeath(center:Vec3,velocity:Vec3,now:number){if(!this.down&&!this.dead)this.knockDown(center,velocity,now);for(const p of this.parts)if(p.body.isKinematic())p.body.setBodyType(RAPIER.RigidBodyType.Dynamic,true);this.forcedStarted=-Infinity;this.forcedTarget=null;this.forcedOrigin.clear();this.dead=true;this.poseMotors(false);}
   finishRecovery(now:number){this.removeParts();this.state='RECOVERING';this.recoveryUntil=now+CONFIG.player.recoverTime;this.target=null;this.blocked=false;this.escapeAxis=0;this.spaceImpulse=0;}
   private removeParts(){this.forcedDuration=CONFIG.forcedRecovery.duration;this.forcedStarted=-Infinity;this.forcedTarget=null;this.forcedOrigin.clear();for(const p of this.parts)this.physics.removePart(p.id);this.parts=[];this.playerJoints=[];this.motorMode='';this.struggle=0;this.loadMass=0;this.gameplayLoadMass=0;this.pressRate=0;this.presses=[];this.mobility=1;this.locomotionReady=false;this.fullPoseSince=-Infinity;this.qteProgress=0;this.poseProgress=0;this.riseOrigin.clear();this.assistedRoot=null;}
   dispose(){this.removeParts();}

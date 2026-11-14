@@ -1,5 +1,5 @@
 import { CONFIG } from '../core/Config';
-export type LossReason='ROW_CLEAR'|'RESILIENCE'|'OVERFLOW'|'SQUEEZE'|'IMPACT'|'SUFFOCATION';
+export type LossReason='ROW_CLEAR'|'RESILIENCE'|'OVERFLOW'|'SQUEEZE'|'IMPACT'|'SUFFOCATION'|'ACID';
 export interface ArmedRelief { fireAt:number;canRelieve:boolean }
 /** All timers use active simulation time. Resource exhaustion is never a defeat reason. */
 export class LossDetector {

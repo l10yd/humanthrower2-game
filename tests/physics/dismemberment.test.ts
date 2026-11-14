@@ -157,7 +157,7 @@ describe('saw dismemberment',()=>{
    expect(gore.drops.length).toBeLessThanOrEqual(CONFIG.gore.maxDrops);expect(gore.wounds.length).toBeLessThanOrEqual(CONFIG.gore.maxWounds);
    for(let i=0;i<600;i++)gore.update(p,CONFIG.dt);
    expect(gore.stains.length).toBeGreaterThan(0);expect(gore.stains.length).toBeLessThanOrEqual(CONFIG.gore.maxStains);expect(gore.wounds.length).toBe(0);
-   gore.reset();expect(gore.snapshot).toEqual({mode:'full',drops:0,stains:0,bodyStains:0,wounds:0,emitted:0});
+   gore.reset();expect(gore.snapshot).toEqual({mode:'full',drops:0,stains:0,bodyStains:0,wounds:0,emitted:0,rayTests:0,candidateChecks:0,updateMs:0});
   }finally{p.dispose();}
  });
  it('all seven enlarged game NPCs have double mass, not volume-scaled eightfold; player stays 32kg',()=>{

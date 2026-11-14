@@ -23,7 +23,9 @@ test('stable upper geometry, not a flying NPC, produces overflow result',async({
  const result=await page.evaluate(async()=>{
   // @ts-expect-error Vite fixture URL.
   const {box}=await import('/src/slicing/ConvexClipper.ts');
-  const g=window.humanthrower,part=g.physics.createPart(box(3,.75,.2),{position:{x:-1.5,y:10.25,z:0},rotation:{x:0,y:0,z:0,w:1}},72,1,'overflowFixture');
+  // @ts-expect-error Vite fixture URL.
+  const {CONFIG}=await import('/src/core/Config.ts');
+  const g=window.humanthrower,part=g.physics.createPart(box(3,.7,.2),{position:{x:-1.5,y:(CONFIG.arena.critical+CONFIG.arena.height)/2,z:0},rotation:{x:0,y:0,z:0,w:1}},72,1,'overflowFixture');
   part.body.setBodyType(1,true); // RAPIER.RigidBodyType.Fixed, so this is a stable fixture load.
   for(let i=0;i<230&&g.state==='RUNNING';i++)(g as unknown as {fixedUpdate():void}).fixedUpdate();
   return g.debugSnapshot();

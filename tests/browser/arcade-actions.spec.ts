@@ -1,5 +1,5 @@
 import { test,expect } from '@playwright/test';
-test('visible QTE counts space taps, does not count hold/repeat, progressively rises; saw defaults on',async({page})=>{
+test('visible QTE counts space taps, does not count hold/repeat, progressively rises; inventory stays empty until pickup',async({page})=>{
  await page.goto('/');await expect(page.locator('#start')).toBeEnabled();await page.locator('#start').click();await page.locator('#pause').click();
  await page.evaluate(async()=>{
   // @ts-expect-error Vite fixture URL
@@ -21,15 +21,15 @@ test('visible QTE counts space taps, does not count hold/repeat, progressively r
  expect(await page.evaluate(()=>window.humanthrower.player.ragdoll.poseProgress)).toBeLessThan(1);
  await page.evaluate(()=>{const g=window.humanthrower;for(let i=0;i<60&&g.player.ragdoll.down;i++){g.player.update({axis:0,pressed:false,released:false,stomp:false},g.now,1/60);g.physics.step();g.now+=1/60;g.player.afterStep(g.now);}});
  expect(await page.evaluate(()=>window.humanthrower.player.qte.escapes)).toBe(1);
- await expect(page.locator('#get-up-qte')).toBeHidden();await expect(page.locator('#saw-mode')).toHaveAttribute('aria-pressed','true');
- await page.locator('#reset').click();expect(await page.evaluate(()=>window.humanthrower.player.qte.escapes)).toBe(0);await expect(page.locator('#saw-mode')).toHaveAttribute('aria-pressed','true');
+ await expect(page.locator('#get-up-qte')).toBeHidden();await expect(page.locator('#saw-mode')).toHaveAttribute('aria-pressed','false');
+ await page.locator('#reset').click();expect(await page.evaluate(()=>window.humanthrower.player.qte.escapes)).toBe(0);await expect(page.locator('#saw-mode')).toHaveAttribute('aria-pressed','false');
 });
 test('only held running upward saw intercepts descending NPC; paused/equipped-only does not',async({page})=>{
  await page.goto('/');await expect(page.locator('#start')).toBeEnabled();await page.locator('#start').click();await page.locator('#pause').click();
  const result=await page.evaluate(async()=>{
   // @ts-expect-error Vite fixture URL
   const {box}=await import('/src/slicing/ConvexClipper.ts');
-  const g=window.humanthrower;g.scheduler.next=g.scheduler.nextBurst=1e9;g.saw.aim={x:0,y:10,z:0};
+  const g=window.humanthrower;g.scheduler.next=g.scheduler.nextBurst=1e9;g.weapons.collect('saw');g.saw.aim={x:0,y:10,z:0};
   const part=g.physics.createPart(box(.6,.3,.3),{position:{x:0,y:3.1,z:0},rotation:{x:0,y:0,z:0,w:1}},60,1,'chest');part.body.setLinvel({x:0,y:-8,z:0},true);
   const input={axis:0,pressed:false,released:false,stomp:false};g.saw.update({...input,saw:false},1/60);const idle=g.saw.guard.interceptions;
   g.saw.update({...input,saw:true},1/60);g.player.update(input,g.now,1/60);

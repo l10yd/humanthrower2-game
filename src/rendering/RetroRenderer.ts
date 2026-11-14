@@ -78,7 +78,7 @@ export const surfaceFragment=`
       float floorPool=1.0-smoothstep(1.0,6.5,length(vWorldPosition-vec3(0.0,1.0,3.0)));
       float blue=1.0-smoothstep(1.0,9.0,length(vWorldPosition-vec3(-4.3,5.0,2.0)));
       diffuse=(.22+key*.60)*(.50+.42*top+.48*floorPool+.16*blue);
-      diffuse=mix(diffuse,diffuse*1.65+.10,isCharacter);
+      diffuse=mix(diffuse,diffuse*1.85+.14,isCharacter);
       vec3 tint=mix(vec3(.55,.65,.57),vec3(1.0),isCharacter);
       localColor=(vec3(.76,.94,.79)+blue*vec3(.0,.06,.18))*tint;
     }
@@ -110,6 +110,7 @@ export const compositeFragment=`
   }
 `;
 export class RetroRenderer {
+  acidLevel=0;private acidPool:THREE.Mesh;private acidSurface:THREE.Mesh;
   cameraShake=0;skyDrops:SkyItem[]=[];chaosWarning:ChaosEvent|null=null;
   private hazardLane:THREE.Mesh;
   private skyVisuals=new Map<number,THREE.Group>();
@@ -121,7 +122,7 @@ export class RetroRenderer {
   retro=true;target=new THREE.WebGLRenderTarget(320,240,{minFilter:THREE.NearestFilter,magFilter:THREE.NearestFilter,generateMipmaps:false});
   private screen=new THREE.Scene();private screenCamera=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
   private composite:THREE.ShaderMaterial;private meshes=new Map<number,THREE.Mesh>();private materialPairs=new Map<string,[THREE.Material,THREE.ShaderMaterial]>();
-  private bands:THREE.Mesh[]=[];private marker:THREE.Mesh;private markers:THREE.Mesh[]=[];private player:THREE.Group;private texture:THREE.DataTexture;
+  private bands:THREE.Mesh[]=[];private bandBorders:THREE.LineSegments[]=[];private marker:THREE.Mesh;private markers:THREE.Mesh[]=[];private player:THREE.Group;private texture:THREE.DataTexture;
   private playerMeshes=new Map<string,THREE.Mesh>();
   private scratchPosition=new THREE.Vector3();private scratchRotation=new THREE.Quaternion();
   private playerDead=false;
@@ -129,6 +130,7 @@ export class RetroRenderer {
   private weaponVisuals=new Map<WeaponKind,THREE.Group>();private grenadeVisuals:THREE.Mesh[]=[];private blastVisuals:THREE.Mesh[]=[];
   private sawProgress:THREE.Mesh;
   private bodyDecals=new BloodDecals();
+  private warningTexture:THREE.DataTexture;
   private bloodDrops:THREE.InstancedMesh;private bloodStains:THREE.InstancedMesh;
   private stainFresh=new THREE.Color('#8f0916');private stainDry=new THREE.Color('#321015');private stainColor=new THREE.Color();
   private effectPose=new THREE.Object3D();private seenGore:GoreSystem|null=null;
@@ -165,9 +167,15 @@ export class RetroRenderer {
     // Material placeholders are not retained when the Blender shaft replaces them.
     if(this.shaft){wallMat.dispose();edgeMat.dispose();}
     addBox(0,CONFIG.arena.critical,1.21,9,.025,.01,new THREE.MeshBasicMaterial({color:'#c78953'}));
+    const hatchBytes=new Uint8Array(16*16*4);
+    for(let y=0;y<16;y++)for(let x=0;x<16;x++){const i=(y*16+x)*4;hatchBytes[i]=hatchBytes[i+1]=hatchBytes[i+2]=255;hatchBytes[i+3]=(x+y)%8<2?210:55;}
+    this.warningTexture=new THREE.DataTexture(hatchBytes,16,16);this.warningTexture.wrapS=this.warningTexture.wrapT=THREE.RepeatWrapping;this.warningTexture.repeat.set(18,2);this.warningTexture.minFilter=this.warningTexture.magFilter=THREE.NearestFilter;this.warningTexture.needsUpdate=true;
+    const borderGeometry=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-4.5,-.5,0),new THREE.Vector3(4.5,-.5,0),new THREE.Vector3(-4.5,.5,0),new THREE.Vector3(4.5,.5,0)]);
+    const borderMaterial=new THREE.LineBasicMaterial({color:'#ffe0a0',depthTest:false,transparent:true,opacity:.9});
     for(let row=0;row<CONFIG.rows.count;row++){
-      const band=new THREE.Mesh(new THREE.PlaneGeometry(9,1),new THREE.MeshBasicMaterial({color:'#b95543',transparent:true,opacity:.22,depthWrite:false}));
+      const band=new THREE.Mesh(new THREE.PlaneGeometry(9,1),new THREE.MeshBasicMaterial({color:'#ed9654',map:this.warningTexture,transparent:true,opacity:.4,depthWrite:false}));
       band.position.set(0,row+.5,1.24);band.visible=false;this.scene.add(band);this.bands.push(band);
+      const borders=new THREE.LineSegments(borderGeometry,borderMaterial);borders.position.copy(band.position);borders.visible=false;borders.renderOrder=25;this.scene.add(borders);this.bandBorders.push(borders);
     }
     this.marker=new THREE.Mesh(new THREE.ConeGeometry(.18,.35,3),new THREE.MeshBasicMaterial({color:'#e4a070'}));this.marker.rotation.z=Math.PI;this.marker.position.set(0,CONFIG.arena.height-.35,0);this.marker.visible=false;this.scene.add(this.marker);this.markers.push(this.marker);
     for(let i=1;i<CONFIG.spawn.maxPending;i++){const marker=this.marker.clone();this.scene.add(marker);this.markers.push(marker);}
@@ -184,6 +192,10 @@ export class RetroRenderer {
     this.sawProgress=new THREE.Mesh(new THREE.RingGeometry(.08,.12,20,1,0,Math.PI*2),new THREE.MeshBasicMaterial({color:'#f2aa39',side:THREE.DoubleSide,depthTest:false,depthWrite:false}));
     this.sawProgress.name='SawCutProgress';
     this.sawProgress.visible=false;this.sawProgress.renderOrder=10;this.scene.add(this.sawProgress);
+    this.acidPool=new THREE.Mesh(new THREE.PlaneGeometry(CONFIG.arena.width,1),new THREE.MeshBasicMaterial({color:'#beb900',transparent:true,opacity:.72,depthTest:false,depthWrite:false}));
+    this.acidPool.name='AcidPool';this.acidPool.position.z=1.6;this.acidPool.renderOrder=40;this.acidPool.visible=false;this.scene.add(this.acidPool);
+    this.acidSurface=new THREE.Mesh(new THREE.PlaneGeometry(CONFIG.arena.width,.06),new THREE.MeshBasicMaterial({color:'#f7f36a',transparent:true,opacity:.95,depthTest:false,depthWrite:false}));
+    this.acidSurface.name='AcidSurface';this.acidSurface.position.z=1.61;this.acidSurface.renderOrder=41;this.acidSurface.visible=false;this.scene.add(this.acidSurface);
     this.buildWeapons();this.buildArenaMask();
     this.hazardLane=new THREE.Mesh(new THREE.PlaneGeometry(1.7,CONFIG.arena.height),new THREE.MeshBasicMaterial({color:'#ff603b',transparent:true,opacity:.13,depthTest:false,depthWrite:false}));
     this.hazardLane.name='ChaosHazardLane';this.hazardLane.position.set(0,CONFIG.arena.height/2,1.5);this.hazardLane.renderOrder=20;this.hazardLane.visible=false;this.scene.add(this.hazardLane);
@@ -316,6 +328,8 @@ export class RetroRenderer {
     p.addScaledVector(direction,-p.z/direction.z);return vec(p.x,p.y,0);
   }
   render(parts:Iterable<Part>,player:PlayerController,rows:Row[],warningX:number[]|number|null,now:number,alpha:number,saw?:SawController,gore?:GoreSystem,weapons?:WeaponController) {
+    this.acidPool.visible=this.acidSurface.visible=this.acidLevel>0;
+    if(this.acidLevel>0){this.acidPool.scale.y=this.acidLevel;this.acidPool.position.y=this.acidLevel/2;this.acidSurface.position.y=this.acidLevel+.012*Math.sin(now*9);(this.acidPool.material as THREE.MeshBasicMaterial).opacity=.65+.07*Math.sin(now*5);}
     this.camera.position.x=Math.sin(now*27)*this.cameraShake;this.camera.position.y=CONFIG.arena.height/2+Math.cos(now*31)*this.cameraShake;
     const incomingBomb=this.skyDrops.find(item=>item.kind==='bomb');
     this.hazardLane.visible=!!incomingBomb||this.chaosWarning?.kind==='bomb'&&!this.chaosWarning.started;
@@ -338,7 +352,7 @@ export class RetroRenderer {
     for(const [,material]of this.materialPairs.values()){this.surfaceSettings(material);material.uniforms.uTime.value=now;}
     for(const {mesh,pair}of this.environmentMaterials){mesh.material=pair[this.retro?1:0];this.surfaceSettings(pair[1]);pair[1].uniforms.uTime.value=now;pair[1].uniforms.uJitterPixels.value=0;}
     for(const lamp of this.rowLamps){const active=rows[lamp.userData.row]?.state==='ARMED';(lamp.material as THREE.MeshBasicMaterial).color.set(active?(Math.sin(now*12)>0?'#d26739':'#8a3828'):'#463c24');}
-    for(const row of rows){this.bands[row.index].visible=row.state==='ARMED';if(row.state==='ARMED')(this.bands[row.index].material as THREE.MeshBasicMaterial).opacity=.18+.06*Math.sin(now*12);}
+    for(const row of rows){const armed=row.state==='ARMED';this.bands[row.index].visible=armed;this.bandBorders[row.index].visible=armed;if(armed)(this.bands[row.index].material as THREE.MeshBasicMaterial).opacity=.36+.1*Math.sin(now*12);}
     const warnings=Array.isArray(warningX)?warningX:warningX===null?[]:[warningX];
     this.markers.forEach((marker,i)=>{marker.visible=i<warnings.length;if(marker.visible)marker.position.x=warnings[i];});
     this.scene.updateMatrixWorld(true);
@@ -430,6 +444,7 @@ export class RetroRenderer {
     }
   }
   get bloodBodyDecals(){return this.bodyDecals.count;}
+  get bloodDecalStats(){return this.bodyDecals.snapshot;}
   get playerVisualParts(){return this.playerMeshes.size;}
   dispose(){window.removeEventListener('resize',this.resize);this.batches.dispose();this.scene.remove(this.batches.group);this.bodyDecals.dispose();
     const materials=new Set<THREE.Material>();
@@ -437,5 +452,5 @@ export class RetroRenderer {
     for(const {pair}of this.environmentMaterials)pair.forEach(m=>materials.add(m));this.environmentMaterials=[];this.rowLamps=[];
     for(const pair of this.materialPairs.values())pair.forEach(m=>materials.add(m));for(const m of materials)m.dispose();
     this.shadows.dispose();
-    this.bloodDrops.dispose();this.bloodStains.dispose();this.meshes.clear();this.playerMeshes.clear();this.materialPairs.clear();this.texture.dispose();this.character?.dispose();this.shaft?.dispose();this.target.dispose();this.renderer.dispose();}
+    this.bloodDrops.dispose();this.bloodStains.dispose();this.meshes.clear();this.playerMeshes.clear();this.materialPairs.clear();this.texture.dispose();this.warningTexture.dispose();this.character?.dispose();this.shaft?.dispose();this.target.dispose();this.renderer.dispose();}
 }

@@ -47,6 +47,9 @@ export class PhysicsManager {
   }
   private colliderParts=new Map<number,Part>(); private nextId=1; private nextJoint=1;
   private components=new Map<number,number>(); private componentsDirty=true;
+  private componentMembers=new Map<number,Part[]>();
+  clearQueries={scannedParts:0,clippedParts:0,skippedParts:0};
+  recoveryQueries={scannedParts:0,candidateParts:0,narrowTests:0,searchCandidates:0,movedIslands:0};
   // NPC parts collide before AND after a cut. Player articulation keeps its
   // existing connected-component filter to preserve supported recovery motors.
   npcSelfContactsEnabled=true;
@@ -194,9 +197,21 @@ export class PhysicsManager {
         const todo=[id];this.components.set(id,id);
         while(todo.length)for(const next of adjacency.get(todo.pop()!)??[])if(!this.components.has(next)) {this.components.set(next,id);todo.push(next);}
       }
+      this.componentMembers.clear();
+      for(const part of this.parts.values()){
+        const root=this.components.get(part.id)!;
+        let members=this.componentMembers.get(root);if(!members)this.componentMembers.set(root,members=[]);
+        members.push(part);
+      }
       this.componentsDirty=false;
     }
     return this.components.has(a)&&this.components.get(a)===this.components.get(b);
+  }
+  /** Topology cache: rebuilding once after a structural edit, not once per query.
+   * Callers must not mutate the returned registry-ordered member list. */
+  connectedParts(id:number):readonly Part[] {
+    this.connected(id,id);const root=this.components.get(id);
+    return root===undefined?[]:this.componentMembers.get(root)??[];
   }
   deferDetachedContacts(npcIds:Set<number>,natural=false):void {
     // With NPC self contact active, this cut does not enable any previously
@@ -379,7 +394,7 @@ export class PhysicsManager {
     const pa=add(a.body.translation(),rotate(j.anchorA,a.body.rotation())),pb=add(b.body.translation(),rotate(j.anchorB,b.body.rotation()));
     return Math.hypot(pa.x-pb.x,pa.y-pb.y,pa.z-pb.z);
   });}
-  dispose(){this.contactLoad.reset();this.impacts.reset();this.eventQueue.free();this.world.free();this.parts.clear();this.geometryById.clear();this.usedGeometry=emptyGeometry();this.joints.clear();this.colliderParts.clear();this.detachedPairs.clear();this.neighborPairs.clear();this.components.clear();
+  dispose(){this.contactLoad.reset();this.impacts.reset();this.eventQueue.free();this.world.free();this.parts.clear();this.geometryById.clear();this.usedGeometry=emptyGeometry();this.joints.clear();this.colliderParts.clear();this.detachedPairs.clear();this.neighborPairs.clear();this.components.clear();this.componentMembers.clear();
     this.diagnosticsBefore.clear();this.diagnosticsWorldBefore=null;this.faultSnapshot=null;this.peakAngularFault=null;this.peakSpeedFault=null;this.peakEnergyFault=null;this.separationFault=null;}
 }
 export const initialPose=(position:Vec3,rotation:Quat=identity):Pose=>({position,rotation});

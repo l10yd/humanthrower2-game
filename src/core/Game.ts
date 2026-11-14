@@ -1,3 +1,6 @@
+import { AcidSystem } from '../gameplay/AcidSystem';
+import { RowWarnings,rowWarningText } from '../gameplay/RowWarnings';
+import { SimulationProfiler } from './SimulationProfiler';
 import { LOSS_LABELS,LOSS_TIPS,formatDuration,runBreakdown,type RunDetails } from '../gameplay/RunSummary';
 import { bombPlayer } from '../gameplay/HazardDamage';
 import { canCarryWeapon, WeaponSupplies } from '../gameplay/WeaponSupplies';
@@ -41,6 +44,8 @@ import type { ReferenceCharacter } from '../assets/ReferenceCharacter';
 import type { IndustrialShaft } from '../assets/IndustrialShaft';
 export type GameState='TITLE'|'RUNNING'|'DYING'|'PAUSED'|'GAME_OVER'|'ERROR';
 export class Game {
+  rowWarnings=new RowWarnings();
+  profiler=new SimulationProfiler();
   preferences=new GameplayPreferences(browserGameplayStorage());pauseMenu:PauseMenu;
   physics=new PhysicsManager();factory=new RagdollFactory(this.physics,CONFIG.spawn.npcScale,CONFIG.spawn.npcMassMultiplier);player=new PlayerController(this.physics,true,this.preferences.settings.headControlFaults);
   tutorial=new Tutorial(browserTutorialStorage());
@@ -60,7 +65,7 @@ export class Game {
   private completedSettings:typeof this.initialSettings|null=null;
   get recordProfile(){return {rulesVersion:RULES_VERSION,profile:this.profile,arenaPreset:`9x${CONFIG.arena.height}x2.4-chaos-v5-${this.mode}-${this.npcMode}${this.preferences.settings.headControlFaults?'-head-faults-on':''}`,assisted:this.gameplaySettingsChanged};}
   private deathReason:LossReason='IMPACT';
-  chaos=new ChaosDirector(randomSeed(20261111^0xabcdef));sky=new SkyDrops();culled=0;
+  chaos=new ChaosDirector(randomSeed(20261111^0xabcdef));acid=new AcidSystem();sky=new SkyDrops();culled=0;
   private nextChaosDrop=0;private nextHazard=0;
   private medicalRandom=randomSeed(20261111^0x6d3d);
   medicalUsed=0;
@@ -83,6 +88,7 @@ export class Game {
   private cleanups:(()=>void)[]=[];
   private listen(target:EventTarget,event:string,handler:EventListener){target.addEventListener(event,handler);this.cleanups.push(()=>target.removeEventListener(event,handler));}
   constructor(canvas:HTMLCanvasElement,character:ReferenceCharacter|null=null,shaft:IndustrialShaft|null=null) {
+    this.profiler.enabled=new URLSearchParams(location.search).has('profile');
     this.pauseMenu=new PauseMenu(document.querySelector<HTMLElement>('#pause-menu')!,canvas,document.querySelector<HTMLElement>('#touch')!,()=>{if(this.state==='PAUSED')this.togglePause();else this.pauseMenu.close();});
     this.renderer=new RetroRenderer(canvas,character,shaft);this.input=new Input(key=>{
       if(this.pauseMenu.open&&key==='Enter')return;
@@ -224,10 +230,10 @@ export class Game {
   newSession(){const seed=crypto.getRandomValues(new Uint32Array(1))[0];this.restart(seed);}
   restart(seed=this.sessionSeed){
     if(!Number.isInteger(seed)||seed<0||seed>0xffffffff)throw Error('Session seed must be an unsigned 32-bit integer');
-    this.sessionSeed=seed;this.gameplaySettingsChanged=false;this.runDetails=null;this.completedSettings=null;
+    this.sessionSeed=seed;this.profiler.reset();this.rowWarnings.reset();this.gameplaySettingsChanged=false;this.runDetails=null;this.completedSettings=null;
     this.initialSettings={mode:this.mode,npcMode:this.npcMode,headControlFaults:this.preferences.settings.headControlFaults};
     this.tutorial.reset();this.audio.resetSession();this.input.clear();this.player.dispose();this.physics.dispose();this.physics=new PhysicsManager();this.factory=new RagdollFactory(this.physics,CONFIG.spawn.npcScale,CONFIG.spawn.npcMassMultiplier);this.player=new PlayerController(this.physics,this.mode==='demo',this.preferences.settings.headControlFaults);
-    this.saw=new SawController(this.physics,this.player,true);this.freshDrops=new FreshDropMotion(this.physics);this.living=new LivingNpcs(this.physics,this.npcMode);this.spawnForms={};this.weapons=new WeaponController(this.physics,this.player,this.saw,this.mode==='demo');this.chaos=new ChaosDirector(randomSeed(this.sessionSeed^0xabcdef));this.supplies=new WeaponSupplies(randomSeed(this.sessionSeed^0x51f15e));this.medicalRandom=randomSeed(this.sessionSeed^0x6d3d);this.medicalUsed=0;this.sky=new SkyDrops();this.culled=0;this.nextChaosDrop=this.nextHazard=0;this.renderer.cameraShake=0;this.saw.arcadeGuardEnabled=this.mode==='demo';this.gore.reset();this.syncSawUI();this.deathRemaining=0;this.deathAt=null;this.pausedState='RUNNING';this.syncQteUI();
+    this.saw=new SawController(this.physics,this.player,true);this.freshDrops=new FreshDropMotion(this.physics);this.living=new LivingNpcs(this.physics,this.npcMode);this.spawnForms={};this.weapons=new WeaponController(this.physics,this.player,this.saw,this.mode==='demo');this.chaos=new ChaosDirector(randomSeed(this.sessionSeed^0xabcdef));this.supplies=new WeaponSupplies(randomSeed(this.sessionSeed^0x51f15e));this.medicalRandom=randomSeed(this.sessionSeed^0x6d3d);this.medicalUsed=0;this.acid.reset();this.sky=new SkyDrops();this.culled=0;this.nextChaosDrop=this.nextHazard=0;this.renderer.cameraShake=0;this.saw.arcadeGuardEnabled=this.mode==='demo';this.gore.reset();this.syncSawUI();this.deathRemaining=0;this.deathAt=null;this.pausedState='RUNNING';this.syncQteUI();
     this.detector=new RowDetector();this.occupancy=new OccupancyRaster();this.random=randomSeed(this.sessionSeed);this.now=0;this.scoring=new ScoreManager();this.difficulty=new DifficultyManager();this.loss=new LossDetector();this.squeeze=new SqueezeProbe(this.physics,this.player);this.result=null;this.drops=0;this.scheduler=new DropScheduler(this.mode);this.playerTimings=[];this.playerUpdateMs=0;this.playerUpdateP95=0;
     this.warning=null;this.continuous=new ContinuousDropPlanner(this.physics,this.factory,this.random);this.survival=new PlayerSurvival(this.mode==='demo'?this.player.damage:null);this.buried=false;document.querySelector<HTMLButtonElement>('#cut')!.disabled=this.mode==='demo';this.planner=new SpawnPlanner(this.physics,this.factory,this.random);this.blockedSince=null;this.nextMeasure=0;this.droppedTime=0;this.spawnBlocked=0;this.spawnCommitBlocks={budget:0,overlap:0};this.input.clear();document.querySelector('#error')!.textContent='';this.state='TITLE';this.start();}
   showTitle(){
@@ -275,7 +281,7 @@ export class Game {
   }
   private updateChaos(){
     if(this.mode!=='demo')return;
-    const {supply,medkit,started}=this.chaos.tick(this.now);
+    const {supply,medkit,started}=this.chaos.tick(this.now,this.physics.parts.size);
     if(medkit)this.sky.spawn('medkit',-3.6+this.medicalRandom()*7.2);
     const random=this.random;
     if(supply){const kind=this.supplies.next(this.player.damage);if(kind)this.sky.spawn('weapon',this.chaos.supplies===1?this.player.current.x:-3.6+random()*7.2,kind);}
@@ -329,25 +335,33 @@ export class Game {
   }
   private fixedUpdate() {
     if(this.state!=='RUNNING'&&this.state!=='DYING')return;
+    if(!this.profiler.enabled){this.simulateFixedUpdate();return;}
+    this.profiler.begin();try{this.simulateFixedUpdate();}finally{this.profiler.end();}
+  }
+  private simulateFixedUpdate() {
+    if(this.state!=='RUNNING'&&this.state!=='DYING')return;
     if(this.state==='DYING'){
       if(this.contextLost||document.hidden)return;
       this.physics.snapshot();this.weapons.tickProjectiles(CONFIG.dt);
       const sky=this.sky.update(this.physics,this.player,CONFIG.dt,false);
       for(const point of sky.bombs){this.weapons.detonate(point);this.audio.impact(15,45);}
       for(const cut of [...sky.cuts,...this.weapons.cuts]){this.gore.cut(cut,this.physics);this.audio.cut();}
+      this.acid.update(this.physics,this.player,this.chaos.active,this.visualTime,false);
       this.physics.step();this.culled+=this.physics.cullOutsideArena();this.gore.update(this.physics,CONFIG.dt);this.deathRemaining=Math.max(0,this.deathRemaining-CONFIG.dt);
       if(this.deathRemaining<=1e-8){this.deathRemaining=0;this.finish(this.deathReason);}return;
     }
     this.physics.snapshot();
     const rawInput=this.input.consume();this.weapons.refreshHeadProtection(!!rawInput.saw);
-    this.updateChaos();
-    if(this.mode==='demo'&&!this.player.damage.alive){this.beginDeath('IMPACT');return;}
+    this.profiler.measure('chaosSky',()=>this.updateChaos());
+    this.profiler.measure('acid',()=>this.acid.update(this.physics,this.player,this.chaos.active,this.now));
+    if(this.mode==='demo'&&!this.player.damage.alive){this.beginDeath(this.acid.level>0?'ACID':'IMPACT');return;}
     const due=this.detector.due(this.now);
+    if(this.rowWarnings.update(this.detector.rows,this.now))this.audio.warning();
     if(due.length) {
       const playerHit=this.mode==='demo'?playerIntersectsRows(this.player,due):due.some(r=>this.player.current.y>=r&&this.player.current.y<r+1);
       const bloodSources=[...this.physics.parts.values()].filter(p=>p.owner==='npc'&&due.some(r=>{const c=add(p.body.translation(),rotate(massProperties(p.poly).center,p.body.rotation()));return c.y>=r&&c.y<=r+1;})).map(p=>({...p.body.worldCom()}));
       if(this.mode==='demo'&&playerHit){this.player.prepareRowDeath(this.now);this.physics.world.propagateModifiedBodyPositionsToColliders();}
-      const result=clearRows(this.physics,due,this.mode==='demo'?'solver':'legacy',this.mode==='demo'&&playerHit,this.player.damage.headImmune?['head']:[]);bloodSources.forEach(p=>this.gore.burst(p,vec(0,1,0),30));this.detector.committed(due,this.now);
+      const result=this.profiler.measure('rowClear',()=>clearRows(this.physics,due,this.mode==='demo'?'solver':'legacy',this.mode==='demo'&&playerHit,this.player.damage.headImmune?['head']:[]));bloodSources.forEach(p=>this.gore.burst(p,vec(0,1,0),30));this.detector.committed(due,this.now);
       this.scoring.clear(result,this.now,this.difficulty.level(this.now,this.rows),this.mode==='technical'&&playerHit);
       if(this.mode==='demo'&&playerHit&&this.player.resumeAfterCut(this.now)){
         document.querySelector('#hint')!.textContent=`ПОВРЕЖДЕНИЕ · ${this.player.damage.mobility==='CRAWL'?'ног нет — ползи A/D':this.player.damage.mobility==='HOP'?'одна нога — передвигайся A/D':'хромота — A/D'} · голова и корпус целы, игра продолжается`;
@@ -368,33 +382,33 @@ export class Game {
       if(parts){this.drops++;if(this.mode==='demo')this.freshDrops.register(parts,this.now,spec.motionSeed??this.drops*7919);if(spec.living)this.living.register(parts,this.now);this.spawnForms[spec.form??'whole']=(this.spawnForms[spec.form??'whole']??0)+1;this.difficulty.committed(spec.type);this.warnings.splice(this.warnings.indexOf(spec),1);committed++;}
       else{spec.fireAt=this.now+.25;this.spawnBlocked++;this.spawnCommitBlocks[budget?'overlap':'budget']++;}
     }
-    const input=this.player.controls(rawInput,this.now);this.weapons.update(input,CONFIG.dt);
+    const input=this.player.controls(rawInput,this.now);this.profiler.measure('weapons',()=>this.weapons.update(input,CONFIG.dt));
     if(this.weapons.lastBroken)document.querySelector('#hint')!.textContent=`${WEAPONS[this.weapons.lastBroken]} сломалось! Лови следующую поставку.`;
     this.gore.sawContact(this.saw.contact,CONFIG.dt);
     this.audio.saw(this.saw.active,this.saw.contact!==null);
     for(const cut of this.weapons.cuts){this.gore.cut(cut,this.physics);this.audio.cut();}
-    const playerStart=performance.now();this.player.update(input,this.now,CONFIG.dt);this.playerUpdateMs=performance.now()-playerStart;
+    const playerStart=performance.now();this.profiler.measure(this.player.ragdoll.down&&this.player.qte.ready?'playerWonQte':this.player.ragdoll.down?'playerProne':'playerStanding',()=>this.player.update(input,this.now,CONFIG.dt));this.playerUpdateMs=performance.now()-playerStart;
     if(this.mode==='demo'&&this.survival.impact(this.player.lastImpact,this.now)&&this.survival.health===0){this.beginDeath('IMPACT');return;}
     if(this.player.ragdoll.down){
       this.playerTimings.push(this.playerUpdateMs);if(this.playerTimings.length>240)this.playerTimings.shift();
       const sorted=[...this.playerTimings].sort((a,b)=>a-b);this.playerUpdateP95=sorted[Math.floor(sorted.length*.95)];
     }
-    this.living.update(this.now,CONFIG.dt,this.player.current);
-    if(this.mode==='demo')this.freshDrops.update(this.now);
-    this.physics.step();this.culled+=this.physics.cullOutsideArena();
+    this.profiler.measure('living',()=>this.living.update(this.now,CONFIG.dt,this.player.current));
+    if(this.mode==='demo')this.profiler.measure('freshDrops',()=>this.freshDrops.update(this.now));
+    this.profiler.measure('physics',()=>this.physics.step());this.culled+=this.physics.cullOutsideArena();
     if(this.mode==='demo'&&this.player.ragdoll.down&&this.player.ragdoll.parts.some(p=>!this.physics.parts.has(p.id))){this.player.ragdoll.syncDamage();if(!this.player.damage.alive){this.beginDeath('IMPACT');return;}}
     for(const impact of this.physics.impacts.events){this.audio.impact(impact.speed,impact.mass);this.gore.collision(impact);}
-    this.gore.update(this.physics,CONFIG.dt);this.now+=CONFIG.dt;this.player.afterStep(this.now);
+    this.profiler.measure('gore',()=>this.gore.update(this.physics,CONFIG.dt));this.now+=CONFIG.dt;this.profiler.measure('playerHandoff',()=>this.player.afterStep(this.now));
     this.tutorial.observe({time:this.now,running:this.state==='RUNNING',demo:this.mode==='demo',x:this.player.current.x,
       down:this.player.ragdoll.down,jumped:!this.player.ragdoll.down&&!this.player.grounded&&this.player.jump.vy>0,
       attack:this.weapons.active,warning:this.warnings.length>0,drops:this.drops,armed:this.detector.rows.some(r=>r.state==='ARMED'),rows:this.rows,
       qteActive:this.player.qte.active,qteReady:this.player.qte.ready});
     if(this.physics.numericFaults)throw Error('Численная ошибка физики: сессия остановлена, перезапустите R.');
     if(this.now>=this.nextMeasure){
-      this.detector.measure(this.occupancy.rebuild(this.physics.parts.values()),this.now);this.nextMeasure=this.now+.1;
-      const trapped=this.squeeze.measure(this.now);if(this.mode==='technical')this.squeeze.assist(this.now);
+      this.detector.measure(this.profiler.measure('occupancy',()=>this.occupancy.rebuild(this.physics.parts.values())),this.now);this.nextMeasure=this.now+.1;
+      const trapped=this.profiler.measure('squeeze',()=>this.squeeze.measure(this.now));if(this.mode==='technical')this.squeeze.assist(this.now);
       if(this.mode==='demo'){
-        this.buried=this.squeeze.breathingBlocked();
+        this.buried=this.profiler.measure('breathing',()=>this.squeeze.breathingBlocked());
         const protectedRecovery=this.player.ragdoll.down&&this.player.qte.ready||this.now<this.player.protectedUntil;
         const reason=this.survival.breathe(this.now,this.buried&&!protectedRecovery);if(reason){this.beginDeath(reason);return;}
         const overflow=this.loss.update(this.now,this.health,this.occupancy.criticalColumns(),this.detector.rows.filter(r=>r.state==='ARMED').map(r=>({fireAt:r.fireAt,canRelieve:r.index+1>CONFIG.arena.critical})));
@@ -419,6 +433,10 @@ export class Game {
       if(this.accumulator>=CONFIG.dt){this.droppedTime+=this.accumulator;this.accumulator%=CONFIG.dt;}
     }
     this.syncQteUI();this.syncTutorialUI();this.syncSawUI();this.syncChaosUI();
+    const rowText=this.state==='RUNNING'||this.state==='PAUSED'&&this.pausedState==='RUNNING'?rowWarningText(this.detector.rows,this.now):'';
+    const rowBanner=document.querySelector<HTMLElement>('#row-warning')!;rowBanner.hidden=!rowText;
+    if(rowBanner.textContent!==rowText)rowBanner.textContent=rowText;
+    this.renderer.acidLevel=this.mode==='demo'?this.acid.level:0;
     this.renderer.skyDrops=this.sky.items;
     this.renderer.chaosWarning=this.state==='RUNNING'?this.chaos.current:null;
     if(!this.contextLost)this.renderer.render(this.physics.parts.values(),this.player,this.detector.rows,this.state==='DYING'||this.state==='GAME_OVER'?[]:this.warnings.map(w=>w.x),this.visualTime,this.state==='RUNNING'||this.state==='DYING'?this.accumulator/CONFIG.dt:1,this.saw,this.gore,this.weapons);
@@ -434,7 +452,7 @@ export class Game {
       this.lastHud=timestamp;
     }
   };
-  debugSnapshot(){return {runDetails:this.runDetails?{...this.runDetails}:null,medicalUsed:this.medicalUsed,visualTime:this.visualTime,chaos:this.chaos.snapshot,sky:this.sky.snapshot,culled:this.culled,deathRemaining:this.deathRemaining,arena:{...CONFIG.arena},seed:this.sessionSeed,tutorial:this.tutorial.snapshot,freshDrops:this.freshDrops.snapshot,living:this.living.snapshot,spawnForms:{...this.spawnForms},environment:this.renderer.shaft?.snapshot??null,character:this.renderer.character?.snapshot??null,state:this.state,time:this.now,parts:this.physics.parts.size,geometry:this.physics.geometryUsage,joints:this.physics.joints.size,rows:this.rows,drops:this.drops,
+  debugSnapshot(){return {acid:this.acid.snapshot,profiling:this.profiler.snapshot,clearQueries:{...this.physics.clearQueries},runDetails:this.runDetails?{...this.runDetails}:null,medicalUsed:this.medicalUsed,visualTime:this.visualTime,chaos:this.chaos.snapshot,sky:this.sky.snapshot,culled:this.culled,deathRemaining:this.deathRemaining,arena:{...CONFIG.arena},seed:this.sessionSeed,tutorial:this.tutorial.snapshot,freshDrops:this.freshDrops.snapshot,living:this.living.snapshot,spawnForms:{...this.spawnForms},environment:this.renderer.shaft?.snapshot??null,character:this.renderer.character?.snapshot??null,state:this.state,time:this.now,parts:this.physics.parts.size,geometry:this.physics.geometryUsage,joints:this.physics.joints.size,rows:this.rows,drops:this.drops,
     player:{...this.player.current},playerState:this.player.state,playerParts:this.player.ragdoll.parts.length,knockdowns:this.player.ragdoll.knockdowns,
     getUpBlocked:this.player.ragdoll.blocked,underPressure:this.player.underPressure,grounded:this.player.grounded,maxSpeed:this.physics.maxSpeed,maxAngularSpeed:this.physics.maxAngularSpeed,
     numericFaults:this.physics.numericFaults,npcSelfContacts:this.physics.npcSelfContactsEnabled,solverSubsteps:this.physics.solverSubsteps,deferredContacts:this.physics.deferredContacts,pairSeparations:this.physics.pairSeparations,separationMs:this.physics.separationMs,droppedTime:this.droppedTime,spawnBlocked:this.spawnBlocked,spawnBlockReasons:{...this.planner.blocked},spawnCommitBlocks:{...this.spawnCommitBlocks},
@@ -442,7 +460,7 @@ export class Game {
     loadMass:this.player.ragdoll.loadMass,gameplayLoadMass:this.player.ragdoll.gameplayLoadMass,pressRate:this.player.ragdoll.pressRate,requiredPressRate:this.player.ragdoll.requiredPressRate,mobility:this.player.ragdoll.mobility,
     trauma:this.player.trauma.snapshot,
     damage:this.player.damage.snapshot,poseProgress:this.player.ragdoll.poseProgress,recoveryAssist:{axis:this.player.ragdoll.escapeAxis,impulse:this.player.ragdoll.spaceImpulse+this.player.recoverySpaceImpulse},
-    qte:this.player.qte.snapshot,protectedUntil:this.player.protectedUntil,
+    qte:this.player.qte.snapshot,recoveryQueries:{...this.physics.recoveryQueries},protectedUntil:this.player.protectedUntil,
     contactImpacts:this.physics.impacts.snapshot,contactLoad:this.physics.contactLoad.snapshot,
     saw:this.saw.snapshot,weapons:this.weapons.snapshot,audio:this.audio.snapshot,gore:this.gore.snapshot,npcMass:[...this.physics.parts.values()].filter(p=>p.owner==='npc').reduce((sum,p)=>sum+p.body.mass(),0),
     npcMode:this.npcMode,mode:this.mode,air:this.survival.air,buried:this.buried,impactHits:this.survival.hits,

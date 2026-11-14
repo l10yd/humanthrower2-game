@@ -132,6 +132,10 @@ Isolated projected-twist differential and locked-linear correction-target cap we
 
 Newread-onlyjointobserver verifies40fullpre/postGramSchmidtblocks andoriginallockedresiduals; no algebraictransformbug found. Incidentshoulderdrift.002234→.011827m appearsbeforeCCD, withnoincidentposeclamp; positivefastbodycontrolprovesclampobserverfunctional. Thislocalizesjointissue tointegrationaftercontactsolves/shortCCDremainder, ratherthanclampingconnectedincidentbodies. Tiny142nojointcaseunchanged1465.402/exact89.609, cap/impulseconsistency remainsseparategate; no productioncorrection. NATIVE_PHYSICS.md.
 
+## MVP continuation: current anchors are not a sufficient thin fix
+
+Checkpoint4 isolated current-anchor arm calculation keeps physicalmass/inertia/CCD/contactflags unchanged, reduces captured102incident1465.402→1155.818rad/s (exact89.609→89.406), but stillfails35 and worsensnormal20droptoω175.343/v28.319withKCCseed42supportregression. Rejected, productionoriginal/observernativecontactsource restored. PGS1→16onlyreducesincidentthin1465→1365, notjoint-convergence-onlycause. [docs/MVP_CHECKPOINT_4.md](docs/MVP_CHECKPOINT_4.md) / NATIVE_PHYSICS.md preserve evidence; no acceptednewphysicscorrection.
+
 ## Next decision boundary
 
 1. LocalisolatedRust/WASMtoolchainandunmodifiedbaselineverified; retaincomparisonartifacts per[NATIVE_PHYSICS.md](NATIVE_PHYSICS.md).

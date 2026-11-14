@@ -1,0 +1,2298 @@
+{
+  "scope": "Selected substep0 thin trace and measured rejection gates; NOT production accepted",
+  "sourceHashes": {
+    "baseline": "90c362471f2615a34861adf4cb3a65557a40668c8b98213f20805c477c9fa501",
+    "candidate": "fb471b84eafa0d04bbcabc8dfb7a39050a5bccad4de3c1a9c164644c1e0d016b"
+  },
+  "baselineRows": [
+    {
+      "after1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "after2": {
+        "angular": [
+          179.59461975097656,
+          141.68487548828125,
+          299.0526428222656
+        ],
+        "linear": [
+          0.026972709223628044,
+          1.1795767545700073,
+          -0.08353638648986816
+        ]
+      },
+      "angularJacobian1": [
+        -0.6161473989486694,
+        0,
+        -1.8901485204696655
+      ],
+      "angularJacobian2": [
+        0.005031823646277189,
+        0,
+        -0.00341391540132463
+      ],
+      "before1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "before2": {
+        "angular": [
+          160.189453125,
+          126.21792602539062,
+          266.473876953125
+        ],
+        "linear": [
+          0.026972709223628044,
+          1.1812586784362793,
+          -0.08353638648986816
+        ]
+      },
+      "cfmFactor": 0.8645331859588623,
+      "direction": [
+        0,
+        -0.9999999403953552,
+        0
+      ],
+      "effectiveMass": 2.671005816523575e-8,
+      "event": "contact-normal-solve",
+      "impulse": 4.07587130712983e-10,
+      "inverseInertiaJacobian1": [
+        0,
+        0,
+        0
+      ],
+      "inverseInertiaJacobian2": [
+        -47609872384,
+        -37947604992,
+        -79930785792
+      ],
+      "island": 1,
+      "model": "twist",
+      "newImpulse": 0,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "bias",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "point": 0,
+      "rhs": -0.7856587171554565,
+      "rhsWithoutBias": 0,
+      "sequence": 5,
+      "slot1": 4294967295,
+      "slot2": 39
+    },
+    {
+      "after1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "after2": {
+        "angular": [
+          179.59461975097656,
+          141.68487548828125,
+          299.0526428222656
+        ],
+        "linear": [
+          0.026972709223628044,
+          1.1795767545700073,
+          -0.08353638648986816
+        ]
+      },
+      "angularJacobian1": [
+        -0.6163601875305176,
+        0,
+        -1.8904998302459717
+      ],
+      "angularJacobian2": [
+        0.005244612228125334,
+        0,
+        -0.0030626056250184774
+      ],
+      "before1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "before2": {
+        "angular": [
+          179.59461975097656,
+          141.68487548828125,
+          299.0526428222656
+        ],
+        "linear": [
+          0.026972709223628044,
+          1.1795767545700073,
+          -0.08353638648986816
+        ]
+      },
+      "cfmFactor": 0.8645331859588623,
+      "direction": [
+        0,
+        -0.9999999403953552,
+        0
+      ],
+      "effectiveMass": 1.605316839459192e-7,
+      "event": "contact-normal-solve",
+      "impulse": 0,
+      "inverseInertiaJacobian1": [
+        0,
+        0,
+        0
+      ],
+      "inverseInertiaJacobian2": [
+        8893399040,
+        6952747008,
+        14543093760
+      ],
+      "island": 1,
+      "model": "twist",
+      "newImpulse": 0,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "bias",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "point": 1,
+      "rhs": -0.7855488657951355,
+      "rhsWithoutBias": 0,
+      "sequence": 6,
+      "slot1": 4294967295,
+      "slot2": 39
+    },
+    {
+      "after1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "after2": {
+        "angular": [
+          469.19580078125,
+          372.9388427734375,
+          786.473388671875
+        ],
+        "linear": [
+          0.026972709223628044,
+          1.193406105041504,
+          -0.08353638648986816
+        ]
+      },
+      "angularJacobian1": [
+        -0.5961857438087463,
+        0,
+        -1.9032272100448608
+      ],
+      "angularJacobian2": [
+        -0.014929830096662045,
+        0,
+        0.009664773009717464
+      ],
+      "before1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "before2": {
+        "angular": [
+          179.59461975097656,
+          141.68487548828125,
+          299.0526428222656
+        ],
+        "linear": [
+          0.026972709223628044,
+          1.1795767545700073,
+          -0.08353638648986816
+        ]
+      },
+      "cfmFactor": 0.8645331859588623,
+      "direction": [
+        0,
+        -0.9999999403953552,
+        0
+      ],
+      "effectiveMass": 8.358418845944016e-9,
+      "event": "contact-normal-solve",
+      "impulse": 9.66695723469968e-10,
+      "inverseInertiaJacobian1": [
+        0,
+        0,
+        0
+      ],
+      "inverseInertiaJacobian2": [
+        86415704064,
+        69005148160,
+        145444175872
+      ],
+      "island": 1,
+      "model": "twist",
+      "newImpulse": 4.317952218002574e-9,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "bias",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "point": 2,
+      "rhs": -1.870427131652832,
+      "rhsWithoutBias": 0,
+      "sequence": 7,
+      "slot1": 4294967295,
+      "slot2": 39
+    },
+    {
+      "after1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "after2": {
+        "angular": [
+          519.74365234375,
+          413.3025817871094,
+          871.5492553710938
+        ],
+        "linear": [
+          0.026972709223628044,
+          1.1958199739456177,
+          -0.08353638648986816
+        ]
+      },
+      "angularJacobian1": [
+        -0.5961857438087463,
+        0,
+        -1.9032272100448608
+      ],
+      "angularJacobian2": [
+        -0.014929830096662045,
+        0,
+        0.009664773009717464
+      ],
+      "before1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "before2": {
+        "angular": [
+          469.19580078125,
+          372.9388427734375,
+          786.473388671875
+        ],
+        "linear": [
+          0.026972709223628044,
+          1.193406105041504,
+          -0.08353638648986816
+        ]
+      },
+      "cfmFactor": 0.8645331859588623,
+      "direction": [
+        0,
+        -0.9999999403953552,
+        0
+      ],
+      "effectiveMass": 8.358418845944016e-9,
+      "event": "contact-normal-solve",
+      "impulse": 0,
+      "inverseInertiaJacobian1": [
+        0,
+        0,
+        0
+      ],
+      "inverseInertiaJacobian2": [
+        86415704064,
+        69005148160,
+        145444175872
+      ],
+      "island": 1,
+      "model": "twist",
+      "newImpulse": 5.849382089806454e-10,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "bias",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "point": 3,
+      "rhs": -1.8704267740249634,
+      "rhsWithoutBias": 0,
+      "sequence": 8,
+      "slot1": 4294967295,
+      "slot2": 39
+    },
+    {
+      "allowFastRotation": false,
+      "angular": [
+        519.74365234375,
+        413.3025817871094,
+        871.5492553710938
+      ],
+      "event": "body-before-integrate",
+      "island": 1,
+      "linear": [
+        0.026972709223628044,
+        1.1958199739456177,
+        -0.08353638648986816
+      ],
+      "maxAngularVelocity": 94.2477798461914,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "bias",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "sequence": 9,
+      "slot": 39
+    },
+    {
+      "allowFastRotation": false,
+      "angular": [
+        44.70643997192383,
+        35.5507698059082,
+        74.96746826171875
+      ],
+      "event": "body-after-native-cap",
+      "island": 1,
+      "linear": [
+        0.026972709223628044,
+        1.1958199739456177,
+        -0.08353638648986816
+      ],
+      "maxAngularVelocity": 94.2477798461914,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "bias",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "sequence": 10,
+      "slot": 39
+    },
+    {
+      "after1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "after2": {
+        "angular": [
+          44.70643997192383,
+          35.5507698059082,
+          74.96746826171875
+        ],
+        "linear": [
+          0.026972709223628044,
+          1.1958199739456177,
+          -0.08353638648986816
+        ]
+      },
+      "angularJacobian1": [
+        -0.6161473989486694,
+        0,
+        -1.8901485204696655
+      ],
+      "angularJacobian2": [
+        0.005031823646277189,
+        0,
+        -0.00341391540132463
+      ],
+      "before1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "before2": {
+        "angular": [
+          44.70643997192383,
+          35.5507698059082,
+          74.96746826171875
+        ],
+        "linear": [
+          0.026972709223628044,
+          1.1958199739456177,
+          -0.08353638648986816
+        ]
+      },
+      "cfmFactor": 1,
+      "direction": [
+        0,
+        -0.9999999403953552,
+        0
+      ],
+      "effectiveMass": 2.671005816523575e-8,
+      "event": "contact-normal-solve",
+      "impulse": 0,
+      "inverseInertiaJacobian1": [
+        0,
+        0,
+        0
+      ],
+      "inverseInertiaJacobian2": [
+        -47609872384,
+        -37947604992,
+        -79930785792
+      ],
+      "island": 1,
+      "model": "twist",
+      "newImpulse": 0,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "relax",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "point": 0,
+      "rhs": 0,
+      "rhsWithoutBias": 0,
+      "sequence": 11,
+      "slot1": 4294967295,
+      "slot2": 39
+    },
+    {
+      "after1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "after2": {
+        "angular": [
+          44.70643997192383,
+          35.5507698059082,
+          74.96746826171875
+        ],
+        "linear": [
+          0.026972709223628044,
+          1.1958199739456177,
+          -0.08353638648986816
+        ]
+      },
+      "angularJacobian1": [
+        -0.6163601875305176,
+        0,
+        -1.8904998302459717
+      ],
+      "angularJacobian2": [
+        0.005244612228125334,
+        0,
+        -0.0030626056250184774
+      ],
+      "before1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "before2": {
+        "angular": [
+          44.70643997192383,
+          35.5507698059082,
+          74.96746826171875
+        ],
+        "linear": [
+          0.026972709223628044,
+          1.1958199739456177,
+          -0.08353638648986816
+        ]
+      },
+      "cfmFactor": 1,
+      "direction": [
+        0,
+        -0.9999999403953552,
+        0
+      ],
+      "effectiveMass": 1.605316839459192e-7,
+      "event": "contact-normal-solve",
+      "impulse": 0,
+      "inverseInertiaJacobian1": [
+        0,
+        0,
+        0
+      ],
+      "inverseInertiaJacobian2": [
+        8893399040,
+        6952747008,
+        14543093760
+      ],
+      "island": 1,
+      "model": "twist",
+      "newImpulse": 0,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "relax",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "point": 1,
+      "rhs": 0,
+      "rhsWithoutBias": 0,
+      "sequence": 12,
+      "slot1": 4294967295,
+      "slot2": 39
+    },
+    {
+      "after1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "after2": {
+        "angular": [
+          -328.43243408203125,
+          -262.41015625,
+          -553.0535278320312
+        ],
+        "linear": [
+          0.026972709223628044,
+          1.1780014038085938,
+          -0.08353638648986816
+        ]
+      },
+      "angularJacobian1": [
+        -0.5961857438087463,
+        0,
+        -1.9032272100448608
+      ],
+      "angularJacobian2": [
+        -0.014929830096662045,
+        0,
+        0.009664773009717464
+      ],
+      "before1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "before2": {
+        "angular": [
+          44.70643997192383,
+          35.5507698059082,
+          74.96746826171875
+        ],
+        "linear": [
+          0.026972709223628044,
+          1.1958199739456177,
+          -0.08353638648986816
+        ]
+      },
+      "cfmFactor": 1,
+      "direction": [
+        0,
+        -0.9999999403953552,
+        0
+      ],
+      "effectiveMass": 8.358418845944016e-9,
+      "event": "contact-normal-solve",
+      "impulse": 4.317952218002574e-9,
+      "inverseInertiaJacobian1": [
+        0,
+        0,
+        0
+      ],
+      "inverseInertiaJacobian2": [
+        86415704064,
+        69005148160,
+        145444175872
+      ],
+      "island": 1,
+      "model": "twist",
+      "newImpulse": 0,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "relax",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "point": 2,
+      "rhs": 0,
+      "rhsWithoutBias": 0,
+      "sequence": 13,
+      "slot1": 4294967295,
+      "slot2": 39
+    },
+    {
+      "after1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "after2": {
+        "angular": [
+          -378.98028564453125,
+          -302.7738952636719,
+          -638.12939453125
+        ],
+        "linear": [
+          0.026972709223628044,
+          1.17558753490448,
+          -0.08353638648986816
+        ]
+      },
+      "angularJacobian1": [
+        -0.5961857438087463,
+        0,
+        -1.9032272100448608
+      ],
+      "angularJacobian2": [
+        -0.014929830096662045,
+        0,
+        0.009664773009717464
+      ],
+      "before1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "before2": {
+        "angular": [
+          -328.43243408203125,
+          -262.41015625,
+          -553.0535278320312
+        ],
+        "linear": [
+          0.026972709223628044,
+          1.1780014038085938,
+          -0.08353638648986816
+        ]
+      },
+      "cfmFactor": 1,
+      "direction": [
+        0,
+        -0.9999999403953552,
+        0
+      ],
+      "effectiveMass": 8.358418845944016e-9,
+      "event": "contact-normal-solve",
+      "impulse": 5.849382089806454e-10,
+      "inverseInertiaJacobian1": [
+        0,
+        0,
+        0
+      ],
+      "inverseInertiaJacobian2": [
+        86415704064,
+        69005148160,
+        145444175872
+      ],
+      "island": 1,
+      "model": "twist",
+      "newImpulse": 0,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "relax",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "point": 3,
+      "rhs": 0,
+      "rhsWithoutBias": 0,
+      "sequence": 14,
+      "slot1": 4294967295,
+      "slot2": 39
+    },
+    {
+      "after1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "after2": {
+        "angular": [
+          -855.9878540039062,
+          -682.102294921875,
+          -1435.6904296875
+        ],
+        "linear": [
+          0.026972709223628044,
+          1.17558753490448,
+          -0.08353638648986816
+        ]
+      },
+      "before1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "before2": {
+        "angular": [
+          -378.98028564453125,
+          -302.7738952636719,
+          -638.12939453125
+        ],
+        "linear": [
+          0.026972709223628044,
+          1.17558753490448,
+          -0.08353638648986816
+        ]
+      },
+      "direction": [
+        0,
+        -0.9999999403953552,
+        0
+      ],
+      "effectiveMass": 2.2410364037585284e-14,
+      "event": "contact-twist-solve",
+      "impulse": 8.500887493934073e-12,
+      "inverseInertiaJacobian1": [
+        0,
+        0,
+        0
+      ],
+      "inverseInertiaJacobian2": [
+        -56112678174720,
+        -44622214594560,
+        -93820918169600
+      ],
+      "island": 1,
+      "limit": 0,
+      "model": "twist",
+      "newImpulse": 0,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "relax",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "rhs": 0,
+      "sequence": 15,
+      "slot1": 4294967295,
+      "slot2": 39
+    },
+    {
+      "after1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "after2": {
+        "angular": [
+          -472.28106689453125,
+          -377.73095703125,
+          -795.56494140625
+        ],
+        "linear": [
+          0.02909776382148266,
+          1.17558753490448,
+          -0.07873426377773285
+        ]
+      },
+      "angularJacobian1": [
+        [
+          -0.03578012436628342,
+          -1.896775722503662,
+          -2.2611330052768608e-7
+        ],
+        [
+          0,
+          0.6062197685241699,
+          -0.035780053585767746
+        ]
+      ],
+      "angularJacobian2": [
+        [
+          -0.021121783182024956,
+          0.003213286167010665,
+          3.8305358884827e-10
+        ],
+        [
+          0,
+          0.004895805846899748,
+          -0.021121783182024956
+        ]
+      ],
+      "before1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "before2": {
+        "angular": [
+          -855.9878540039062,
+          -682.102294921875,
+          -1435.6904296875
+        ],
+        "linear": [
+          0.026972709223628044,
+          1.17558753490448,
+          -0.08353638648986816
+        ]
+      },
+      "directions": [
+        [
+          0,
+          -1.1920928955078125e-7,
+          0.9999999403953552
+        ],
+        [
+          -0.9999998807907104,
+          0,
+          0
+        ]
+      ],
+      "event": "contact-tangent-solve",
+      "impulse": [
+        1.163691365491104e-9,
+        -5.14960907249673e-10
+      ],
+      "inverseInertiaJacobian1": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "inverseInertiaJacobian2": [
+        [
+          -1311595167744,
+          -1041815896064,
+          -2192023617536
+        ],
+        [
+          -2218780524544,
+          -1763203481600,
+          -3710404788224
+        ]
+      ],
+      "island": 1,
+      "limit": 0,
+      "massMatrix": [
+        24359702528,
+        69742190592,
+        41198919680
+      ],
+      "model": "twist",
+      "newImpulse": [
+        0,
+        0
+      ],
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "relax",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "rhs": [
+        0,
+        0
+      ],
+      "sequence": 16,
+      "slot1": 4294967295,
+      "slot2": 39
+    }
+  ],
+  "candidateRows": [
+    {
+      "after1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "after2": {
+        "angular": [
+          46.12575149536133,
+          34.859806060791016,
+          74.43019104003906
+        ],
+        "linear": [
+          0.028600875288248062,
+          1.180274486541748,
+          -0.07985711842775345
+        ]
+      },
+      "angularJacobian1": [
+        -0.6161473989486694,
+        0,
+        -1.8901485204696655
+      ],
+      "angularJacobian2": [
+        0.005031823646277189,
+        0,
+        -0.00341391540132463
+      ],
+      "before1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "before2": {
+        "angular": [
+          46.124855041503906,
+          34.859092712402344,
+          74.4286880493164
+        ],
+        "linear": [
+          0.028600875288248062,
+          1.1802746057510376,
+          -0.07985711842775345
+        ]
+      },
+      "cfmFactor": 0.8645331859588623,
+      "direction": [
+        0,
+        -0.9999999403953552,
+        0
+      ],
+      "effectiveMass": 2.671005816523575e-8,
+      "event": "contact-normal-solve",
+      "impulse": 4.07587130712983e-10,
+      "inverseInertiaJacobian1": [
+        0,
+        0,
+        0
+      ],
+      "inverseInertiaJacobian2": [
+        -47609872384,
+        -37947604992,
+        -79930785792
+      ],
+      "island": 1,
+      "model": "twist",
+      "newImpulse": 4.0756834018829124e-10,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "bias",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "point": 0,
+      "rhs": -0.7856587171554565,
+      "rhsWithoutBias": 0,
+      "sequence": 5,
+      "slot1": 4294967295,
+      "slot2": 39
+    },
+    {
+      "after1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "after2": {
+        "angular": [
+          46.12575149536133,
+          34.859806060791016,
+          74.43019104003906
+        ],
+        "linear": [
+          0.028600875288248062,
+          1.180274486541748,
+          -0.07985711842775345
+        ]
+      },
+      "angularJacobian1": [
+        -0.6163601875305176,
+        0,
+        -1.8904998302459717
+      ],
+      "angularJacobian2": [
+        0.005244612228125334,
+        0,
+        -0.0030626056250184774
+      ],
+      "before1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "before2": {
+        "angular": [
+          46.12575149536133,
+          34.859806060791016,
+          74.43019104003906
+        ],
+        "linear": [
+          0.028600875288248062,
+          1.180274486541748,
+          -0.07985711842775345
+        ]
+      },
+      "cfmFactor": 0.8645331859588623,
+      "direction": [
+        0,
+        -0.9999999403953552,
+        0
+      ],
+      "effectiveMass": 1.605316839459192e-7,
+      "event": "contact-normal-solve",
+      "impulse": 0,
+      "inverseInertiaJacobian1": [
+        0,
+        0,
+        0
+      ],
+      "inverseInertiaJacobian2": [
+        8893399040,
+        6952747008,
+        14543093760
+      ],
+      "island": 1,
+      "model": "twist",
+      "newImpulse": 0,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "bias",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "point": 1,
+      "rhs": -0.7855488657951355,
+      "rhsWithoutBias": 0,
+      "sequence": 6,
+      "slot1": 4294967295,
+      "slot2": 39
+    },
+    {
+      "after1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "after2": {
+        "angular": [
+          46.12575149536133,
+          34.859806060791016,
+          74.43019104003906
+        ],
+        "linear": [
+          0.028600875288248062,
+          1.180274486541748,
+          -0.07985711842775345
+        ]
+      },
+      "angularJacobian1": [
+        -0.5961857438087463,
+        0,
+        -1.9032272100448608
+      ],
+      "angularJacobian2": [
+        -0.014929830096662045,
+        0,
+        0.009664773009717464
+      ],
+      "before1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "before2": {
+        "angular": [
+          46.12575149536133,
+          34.859806060791016,
+          74.43019104003906
+        ],
+        "linear": [
+          0.028600875288248062,
+          1.180274486541748,
+          -0.07985711842775345
+        ]
+      },
+      "cfmFactor": 0.8645331859588623,
+      "direction": [
+        0,
+        -0.9999999403953552,
+        0
+      ],
+      "effectiveMass": 8.358418845944016e-9,
+      "event": "contact-normal-solve",
+      "impulse": 7.282404679287424e-10,
+      "inverseInertiaJacobian1": [
+        0,
+        0,
+        0
+      ],
+      "inverseInertiaJacobian2": [
+        86415704064,
+        69005148160,
+        145444175872
+      ],
+      "island": 1,
+      "model": "twist",
+      "newImpulse": 7.282404679287424e-10,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "bias",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "point": 2,
+      "rhs": -1.870427131652832,
+      "rhsWithoutBias": 0,
+      "sequence": 7,
+      "slot1": 4294967295,
+      "slot2": 39
+    },
+    {
+      "after1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "after2": {
+        "angular": [
+          46.12575149536133,
+          34.859806060791016,
+          74.43019104003906
+        ],
+        "linear": [
+          0.028600875288248062,
+          1.180274486541748,
+          -0.07985711842775345
+        ]
+      },
+      "angularJacobian1": [
+        -0.5961857438087463,
+        0,
+        -1.9032272100448608
+      ],
+      "angularJacobian2": [
+        -0.014929830096662045,
+        0,
+        0.009664773009717464
+      ],
+      "before1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "before2": {
+        "angular": [
+          46.12575149536133,
+          34.859806060791016,
+          74.43019104003906
+        ],
+        "linear": [
+          0.028600875288248062,
+          1.180274486541748,
+          -0.07985711842775345
+        ]
+      },
+      "cfmFactor": 0.8645331859588623,
+      "direction": [
+        0,
+        -0.9999999403953552,
+        0
+      ],
+      "effectiveMass": 8.358418845944016e-9,
+      "event": "contact-normal-solve",
+      "impulse": 0,
+      "inverseInertiaJacobian1": [
+        0,
+        0,
+        0
+      ],
+      "inverseInertiaJacobian2": [
+        86415704064,
+        69005148160,
+        145444175872
+      ],
+      "island": 1,
+      "model": "twist",
+      "newImpulse": 0,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "bias",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "point": 3,
+      "rhs": -1.8704267740249634,
+      "rhsWithoutBias": 0,
+      "sequence": 8,
+      "slot1": 4294967295,
+      "slot2": 39
+    },
+    {
+      "allowFastRotation": false,
+      "angular": [
+        46.12575149536133,
+        34.859806060791016,
+        74.43019104003906
+      ],
+      "event": "body-before-integrate",
+      "island": 1,
+      "linear": [
+        0.028600875288248062,
+        1.180274486541748,
+        -0.07985711842775345
+      ],
+      "maxAngularVelocity": 94.2477798461914,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "bias",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "sequence": 9,
+      "slot": 39
+    },
+    {
+      "allowFastRotation": false,
+      "angular": [
+        46.12575149536133,
+        34.859806060791016,
+        74.43019104003906
+      ],
+      "event": "body-after-native-cap",
+      "island": 1,
+      "linear": [
+        0.028600875288248062,
+        1.180274486541748,
+        -0.07985711842775345
+      ],
+      "maxAngularVelocity": 94.2477798461914,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "bias",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "sequence": 10,
+      "slot": 39
+    },
+    {
+      "after1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "after2": {
+        "angular": [
+          46.12575149536133,
+          34.859806060791016,
+          74.43019104003906
+        ],
+        "linear": [
+          0.028600875288248062,
+          1.180274486541748,
+          -0.07985711842775345
+        ]
+      },
+      "angularJacobian1": [
+        -0.6161473989486694,
+        0,
+        -1.8901485204696655
+      ],
+      "angularJacobian2": [
+        0.005031823646277189,
+        0,
+        -0.00341391540132463
+      ],
+      "before1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "before2": {
+        "angular": [
+          46.12575149536133,
+          34.859806060791016,
+          74.43019104003906
+        ],
+        "linear": [
+          0.028600875288248062,
+          1.180274486541748,
+          -0.07985711842775345
+        ]
+      },
+      "cfmFactor": 1,
+      "direction": [
+        0,
+        -0.9999999403953552,
+        0
+      ],
+      "effectiveMass": 2.671005816523575e-8,
+      "event": "contact-normal-solve",
+      "impulse": 4.0756834018829124e-10,
+      "inverseInertiaJacobian1": [
+        0,
+        0,
+        0
+      ],
+      "inverseInertiaJacobian2": [
+        -47609872384,
+        -37947604992,
+        -79930785792
+      ],
+      "island": 1,
+      "model": "twist",
+      "newImpulse": 4.0756834018829124e-10,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "relax",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "point": 0,
+      "rhs": 0,
+      "rhsWithoutBias": 0,
+      "sequence": 11,
+      "slot1": 4294967295,
+      "slot2": 39
+    },
+    {
+      "after1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "after2": {
+        "angular": [
+          46.12575149536133,
+          34.859806060791016,
+          74.43019104003906
+        ],
+        "linear": [
+          0.028600875288248062,
+          1.180274486541748,
+          -0.07985711842775345
+        ]
+      },
+      "angularJacobian1": [
+        -0.6163601875305176,
+        0,
+        -1.8904998302459717
+      ],
+      "angularJacobian2": [
+        0.005244612228125334,
+        0,
+        -0.0030626056250184774
+      ],
+      "before1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "before2": {
+        "angular": [
+          46.12575149536133,
+          34.859806060791016,
+          74.43019104003906
+        ],
+        "linear": [
+          0.028600875288248062,
+          1.180274486541748,
+          -0.07985711842775345
+        ]
+      },
+      "cfmFactor": 1,
+      "direction": [
+        0,
+        -0.9999999403953552,
+        0
+      ],
+      "effectiveMass": 1.605316839459192e-7,
+      "event": "contact-normal-solve",
+      "impulse": 0,
+      "inverseInertiaJacobian1": [
+        0,
+        0,
+        0
+      ],
+      "inverseInertiaJacobian2": [
+        8893399040,
+        6952747008,
+        14543093760
+      ],
+      "island": 1,
+      "model": "twist",
+      "newImpulse": 0,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "relax",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "point": 1,
+      "rhs": 0,
+      "rhsWithoutBias": 0,
+      "sequence": 12,
+      "slot1": 4294967295,
+      "slot2": 39
+    },
+    {
+      "after1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "after2": {
+        "angular": [
+          -16.805660247802734,
+          -15.392536163330078,
+          -31.488143920898438
+        ],
+        "linear": [
+          0.028600875288248062,
+          1.1772693395614624,
+          -0.07985711842775345
+        ]
+      },
+      "angularJacobian1": [
+        -0.5961857438087463,
+        0,
+        -1.9032272100448608
+      ],
+      "angularJacobian2": [
+        -0.014929830096662045,
+        0,
+        0.009664773009717464
+      ],
+      "before1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "before2": {
+        "angular": [
+          46.12575149536133,
+          34.859806060791016,
+          74.43019104003906
+        ],
+        "linear": [
+          0.028600875288248062,
+          1.180274486541748,
+          -0.07985711842775345
+        ]
+      },
+      "cfmFactor": 1,
+      "direction": [
+        0,
+        -0.9999999403953552,
+        0
+      ],
+      "effectiveMass": 8.358418845944016e-9,
+      "event": "contact-normal-solve",
+      "impulse": 7.282404679287424e-10,
+      "inverseInertiaJacobian1": [
+        0,
+        0,
+        0
+      ],
+      "inverseInertiaJacobian2": [
+        86415704064,
+        69005148160,
+        145444175872
+      ],
+      "island": 1,
+      "model": "twist",
+      "newImpulse": 0,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "relax",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "point": 2,
+      "rhs": 0,
+      "rhsWithoutBias": 0,
+      "sequence": 13,
+      "slot1": 4294967295,
+      "slot2": 39
+    },
+    {
+      "after1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "after2": {
+        "angular": [
+          -16.805660247802734,
+          -15.392536163330078,
+          -31.488143920898438
+        ],
+        "linear": [
+          0.028600875288248062,
+          1.1772693395614624,
+          -0.07985711842775345
+        ]
+      },
+      "angularJacobian1": [
+        -0.5961857438087463,
+        0,
+        -1.9032272100448608
+      ],
+      "angularJacobian2": [
+        -0.014929830096662045,
+        0,
+        0.009664773009717464
+      ],
+      "before1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "before2": {
+        "angular": [
+          -16.805660247802734,
+          -15.392536163330078,
+          -31.488143920898438
+        ],
+        "linear": [
+          0.028600875288248062,
+          1.1772693395614624,
+          -0.07985711842775345
+        ]
+      },
+      "cfmFactor": 1,
+      "direction": [
+        0,
+        -0.9999999403953552,
+        0
+      ],
+      "effectiveMass": 8.358418845944016e-9,
+      "event": "contact-normal-solve",
+      "impulse": 0,
+      "inverseInertiaJacobian1": [
+        0,
+        0,
+        0
+      ],
+      "inverseInertiaJacobian2": [
+        86415704064,
+        69005148160,
+        145444175872
+      ],
+      "island": 1,
+      "model": "twist",
+      "newImpulse": 0,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "relax",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "point": 3,
+      "rhs": 0,
+      "rhsWithoutBias": 0,
+      "sequence": 14,
+      "slot1": 4294967295,
+      "slot2": 39
+    },
+    {
+      "after1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "after2": {
+        "angular": [
+          2.5505409240722656,
+          0.0000019073486328125,
+          0.8756027221679688
+        ],
+        "linear": [
+          0.028600875288248062,
+          1.1772693395614624,
+          -0.07985711842775345
+        ]
+      },
+      "before1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "before2": {
+        "angular": [
+          -16.805660247802734,
+          -15.392536163330078,
+          -31.488143920898438
+        ],
+        "linear": [
+          0.028600875288248062,
+          1.1772693395614624,
+          -0.07985711842775345
+        ]
+      },
+      "direction": [
+        0,
+        -0.9999999403953552,
+        0
+      ],
+      "effectiveMass": 2.2410364037585284e-14,
+      "event": "contact-twist-solve",
+      "impulse": 1.5961175523632187e-12,
+      "inverseInertiaJacobian1": [
+        0,
+        0,
+        0
+      ],
+      "inverseInertiaJacobian2": [
+        -56112678174720,
+        -44622214594560,
+        -93820918169600
+      ],
+      "island": 1,
+      "limit": 6.728748200984791e-12,
+      "model": "twist",
+      "newImpulse": 1.9410699176464208e-12,
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "relax",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "rhs": 0,
+      "sequence": 15,
+      "slot1": 4294967295,
+      "slot2": 39
+    },
+    {
+      "after1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "after2": {
+        "angular": [
+          46.7274169921875,
+          34.856689453125,
+          74.05422973632812
+        ],
+        "linear": [
+          0.029806731268763542,
+          1.1772693395614624,
+          -0.07767821848392487
+        ]
+      },
+      "angularJacobian1": [
+        [
+          -0.03578012436628342,
+          -1.896775722503662,
+          -2.2611330052768608e-7
+        ],
+        [
+          0,
+          0.6062197685241699,
+          -0.035780053585767746
+        ]
+      ],
+      "angularJacobian2": [
+        [
+          -0.021121783182024956,
+          0.003213286167010665,
+          3.8305358884827e-10
+        ],
+        [
+          0,
+          0.004895805846899748,
+          -0.021121783182024956
+        ]
+      ],
+      "before1": {
+        "angular": [
+          0,
+          0,
+          0
+        ],
+        "linear": [
+          0,
+          0,
+          0
+        ]
+      },
+      "before2": {
+        "angular": [
+          2.5505409240722656,
+          0.0000019073486328125,
+          0.8756027221679688
+        ],
+        "linear": [
+          0.028600875288248062,
+          1.1772693395614624,
+          -0.07985711842775345
+        ]
+      },
+      "directions": [
+        [
+          0,
+          -1.1920928955078125e-7,
+          0.9999999403953552
+        ],
+        [
+          -0.9999998807907104,
+          0,
+          0
+        ]
+      ],
+      "event": "contact-tangent-solve",
+      "impulse": [
+        2.7209925979043703e-10,
+        -1.2041034835874598e-10
+      ],
+      "inverseInertiaJacobian1": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "inverseInertiaJacobian2": [
+        [
+          -1311595167744,
+          -1041815896064,
+          -2192023617536
+        ],
+        [
+          -2218780524544,
+          -1763203481600,
+          -3710404788224
+        ]
+      ],
+      "island": 1,
+      "limit": 3.56622287256414e-10,
+      "massMatrix": [
+        24359702528,
+        69742190592,
+        41198919680
+      ],
+      "model": "twist",
+      "newImpulse": [
+        -2.559096545784456e-10,
+        1.7180290523555186e-10
+      ],
+      "phase": {
+        "group": 0,
+        "iteration": 0,
+        "pass": "relax",
+        "substep": 0
+      },
+      "pipeline": {
+        "ccdEnabled": true,
+        "dt": 0.008333333767950535,
+        "pass": 1,
+        "remaining": 0
+      },
+      "rhs": [
+        0,
+        0
+      ],
+      "sequence": 16,
+      "slot1": 4294967295,
+      "slot2": 39
+    }
+  ],
+  "reports": [
+    {
+      "stem": "joint-limit-impact",
+      "variant": "baseline",
+      "parts": 110,
+      "baselineAngular": 82.8236998809527,
+      "candidateAngular": 19.1866627604046,
+      "baselineWorldAngular": 82.8236998809527,
+      "candidateWorldAngular": 47.62964054841981,
+      "statesIdenticalToBaseline": false,
+      "observerStatesExact": true,
+      "observerSnapshotExact": true,
+      "boundedObserverExact": true,
+      "boundedRows": 1,
+      "boundedDropped": 3846,
+      "candidateFinite": true,
+      "equations": {
+        "count": 1080,
+        "finite": true,
+        "maxImpulseRelativeError": 0.0000015788183418408153,
+        "maxVelocityRelativeError": 9.41027565204422e-7,
+        "worstVelocity": {
+          "sequence": 2219,
+          "event": "joint-solve",
+          "finite": true,
+          "impulseRelativeError": 5.170787056556725e-8,
+          "velocityRelativeError": 9.41027565204422e-7
+        }
+      }
+    },
+    {
+      "stem": "thin-contact-impact",
+      "variant": "baseline",
+      "parts": 102,
+      "baselineAngular": 1465.401849679397,
+      "candidateAngular": 18.865667022481354,
+      "baselineWorldAngular": 1465.401849679397,
+      "candidateWorldAngular": 18.865667022481354,
+      "statesIdenticalToBaseline": false,
+      "observerStatesExact": true,
+      "observerSnapshotExact": true,
+      "boundedObserverExact": true,
+      "boundedRows": 1,
+      "boundedDropped": 136,
+      "candidateFinite": true,
+      "equations": {
+        "count": 100,
+        "finite": true,
+        "maxImpulseRelativeError": 4.813545350091066e-9,
+        "maxVelocityRelativeError": 0.0000025636786631366704,
+        "worstVelocity": {
+          "sequence": 28,
+          "event": "contact-twist-solve",
+          "finite": true,
+          "impulseRelativeError": 1.967350142342845e-20,
+          "velocityRelativeError": 0.0000025636786631366704
+        }
+      }
+    },
+    {
+      "stem": "thin-contact-impact",
+      "variant": "exact",
+      "parts": 102,
+      "baselineAngular": 89.60866572762332,
+      "candidateAngular": 2.8329148565902083,
+      "baselineWorldAngular": 89.60866572762332,
+      "candidateWorldAngular": 10.149267457998112,
+      "statesIdenticalToBaseline": false,
+      "observerStatesExact": true,
+      "observerSnapshotExact": true,
+      "boundedObserverExact": true,
+      "boundedRows": 1,
+      "boundedDropped": 136,
+      "candidateFinite": true,
+      "equations": {
+        "count": 100,
+        "finite": true,
+        "maxImpulseRelativeError": 8.71466526073401e-15,
+        "maxVelocityRelativeError": 0.000003896718136849431,
+        "worstVelocity": {
+          "sequence": 16,
+          "event": "contact-tangent-solve",
+          "finite": true,
+          "impulseRelativeError": 0,
+          "velocityRelativeError": 0.000003896718136849431
+        }
+      }
+    }
+  ],
+  "worldGate": {
+    "baselineAngular": 82.8236998809527,
+    "candidateAngular": 108.08409229841602,
+    "candidateSpeed": 30.160213996843417,
+    "kccSeedsPassed": [
+      17,
+      42
+    ],
+    "productionAdopted": false
+  }
+}

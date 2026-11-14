@@ -1,21 +1,26 @@
 import { PhysicsManager, RAPIER } from '../physics/PhysicsManager';
 import { add, identity, length, mul, sub, vec, type Quat, type Vec3 } from '../slicing/Math';
 import { slerp } from '../slicing/Quaternion';
-import { type CollisionQuery, nearbyColliders, shapeBounds, sweptBounds } from './QueryBounds';
+import { type CollisionQuery, nearbyColliders, shapeBounds, sweptBounds,translationBounds } from './QueryBounds';
 export interface RecoverySweep { shape:RAPIER.Shape; from:Vec3; rotation:Quat; to:Vec3; toRotation?:Quat }
 /** Exact translational casts plus bounded angular samples; never mutates colliders. */
 export function recoveryPathClear(physics:PhysicsManager,sweep:RecoverySweep,external:(c:RAPIER.Collider)=>boolean,query?:CollisionQuery):boolean {
   const displacement=sub(sweep.to,sweep.from);
   const destinationRotation=sweep.toRotation??identity;
   const cosine=sweep.rotation.x*destinationRotation.x+sweep.rotation.y*destinationRotation.y+sweep.rotation.z*destinationRotation.z+sweep.rotation.w*destinationRotation.w;
-  const angle=2*Math.acos(Math.min(1,Math.abs(cosine)));
+  // Equal float32 quaternions need not have dot(q,q)===1. Treat identical
+  // orientation (including q/-q) as exact translation instead of 13+ casts.
+  const sameRotation=(sweep.rotation.x===destinationRotation.x&&sweep.rotation.y===destinationRotation.y&&sweep.rotation.z===destinationRotation.z&&sweep.rotation.w===destinationRotation.w)
+    ||(sweep.rotation.x===-destinationRotation.x&&sweep.rotation.y===-destinationRotation.y&&sweep.rotation.z===-destinationRotation.z&&sweep.rotation.w===-destinationRotation.w);
+  const angle=sameRotation?0:2*Math.acos(Math.min(1,Math.abs(cosine)));
   const samples=Math.max(1,Math.ceil(angle/.12),Math.ceil(length(displacement)/.04));
+  const endpoint=add(sweep.from,displacement);
   let clear=true;
-  for(const c of nearbyColliders(physics,sweptBounds(sweep.shape,sweep.from,sweep.to),external,query)){
+  const candidates=angle<1e-6?translationBounds(sweep.shape,sweep.from,sweep.to,sweep.rotation):sweptBounds(sweep.shape,sweep.from,sweep.to);
+  for(const c of nearbyColliders(physics,candidates,external,query)){
     if(!clear)break;
     const start=c.contactShape(sweep.shape,sweep.from,sweep.rotation,.015);
     const allowed=Math.min(0,start?.distance??0)-.002;
-    const endpoint=add(sweep.from,displacement);
     const endpointContact=c.contactShape(sweep.shape,endpoint,destinationRotation,0);
     if(endpointContact&&endpointContact.distance<allowed){clear=false;break;}
     // A supporting face is not an obstacle above the player, but the destination must

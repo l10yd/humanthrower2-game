@@ -26,24 +26,66 @@ export function bloodDecalGeometry(stain:BloodStain,poly:ConvexPolyhedron):THREE
 }
 export class BloodDecals {
   readonly group=new THREE.Group();
-  private entries=new Map<BloodStain,{mesh:THREE.Mesh;poly:ConvexPolyhedron;partId:number}>();
+  batching=true;
+  readonly batch:THREE.Mesh;
+  private batchGeometry=new THREE.BufferGeometry();private capacity=0;private vertices=0;
+  private scratch=new THREE.Vector3();
+  private entries=new Map<BloodStain,{mesh:THREE.Mesh;poly:ConvexPolyhedron;partId:number;age:number}>();
+  private lastBatching=true;
   private fresh=new THREE.Color('#990b20');private dry=new THREE.Color('#3b1115');
-  constructor(){this.group.name='BloodBodyDecals';}
+  private material=new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.DoubleSide,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});
+  private color=new THREE.Color();
+  constructor(){this.group.name='BloodBodyDecals';this.batch=new THREE.Mesh(this.batchGeometry,this.material);this.batch.name='BatchedBloodBodyDecals';this.batch.frustumCulled=false;this.batch.visible=false;}
   update(stains:BloodStain[],parts:Map<number,Part>,visuals:Map<number,THREE.Mesh>,enabled:boolean){
-    const alive=new Set<BloodStain>();this.group.visible=enabled;
+    const alive=new Set<BloodStain>();this.group.visible=enabled;let dirty=this.lastBatching!==this.batching;this.lastBatching=this.batching;
     for(const s of stains){
       if(s.partId===undefined)continue;const p=parts.get(s.partId),visual=visuals.get(s.partId);if(!p||!visual)continue;alive.add(s);
       let entry=this.entries.get(s);
       if(!entry){
-        const material=new THREE.MeshBasicMaterial({color:this.fresh,side:THREE.DoubleSide,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});
-        const mesh=new THREE.Mesh(bloodDecalGeometry(s,p.poly),material);this.group.add(mesh);entry={mesh,poly:p.poly,partId:p.id};this.entries.set(s,entry);
+        const mesh=new THREE.Mesh(bloodDecalGeometry(s,p.poly),this.material);this.group.remove(this.batch);this.group.add(mesh);entry={mesh,poly:p.poly,partId:p.id,age:-1};this.entries.set(s,entry);dirty=true;
       }
-      if(entry.poly!==p.poly||entry.partId!==p.id){entry.mesh.geometry.dispose();entry.mesh.geometry=bloodDecalGeometry(s,p.poly);entry.poly=p.poly;entry.partId=p.id;}
-      entry.mesh.position.copy(visual.position);entry.mesh.quaternion.copy(visual.quaternion);
-      (entry.mesh.material as THREE.MeshBasicMaterial).color.copy(this.fresh).lerp(this.dry,Math.min(1,s.age/30));
+      if(entry.poly!==p.poly||entry.partId!==p.id){entry.mesh.geometry.dispose();entry.mesh.geometry=bloodDecalGeometry(s,p.poly);entry.poly=p.poly;entry.partId=p.id;entry.age=-1;dirty=true;}
+      if(!entry.mesh.position.equals(visual.position)||!entry.mesh.quaternion.equals(visual.quaternion))dirty=true;
+      entry.mesh.position.copy(visual.position);entry.mesh.quaternion.copy(visual.quaternion);entry.mesh.updateMatrix();entry.mesh.visible=!this.batching;
+      const age=Math.min(30,s.age);
+      if(entry.age!==age){
+        dirty=true;entry.age=age;this.color.copy(this.fresh).lerp(this.dry,age/30);
+        let colors=entry.mesh.geometry.getAttribute('color') as THREE.BufferAttribute|undefined;
+        if(!colors){colors=new THREE.BufferAttribute(new Float32Array(entry.mesh.geometry.getAttribute('position').count*3),3);entry.mesh.geometry.setAttribute('color',colors);}
+        for(let i=0;i<colors.count;i++)colors.setXYZ(i,this.color.r,this.color.g,this.color.b);colors.needsUpdate=true;
+      }
     }
-    for(const [s,e]of this.entries)if(!alive.has(s)){this.group.remove(e.mesh);e.mesh.geometry.dispose();(e.mesh.material as THREE.Material).dispose();this.entries.delete(s);}
+    for(const [s,e]of this.entries)if(!alive.has(s)){this.group.remove(e.mesh);e.mesh.geometry.dispose();this.entries.delete(s);dirty=true;}
+    if(dirty)this.syncBatch();if(this.batch.parent!==this.group)this.group.add(this.batch);
   }
+  private syncBatch(){
+    this.vertices=0;
+    if(!this.batching){this.batch.visible=false;return;}
+    for(const e of this.entries.values())this.vertices+=e.mesh.geometry.getAttribute('position').count;
+    this.batch.visible=this.vertices>0;
+    if(this.vertices>this.capacity){
+      this.capacity=2**Math.ceil(Math.log2(this.vertices));
+      // Replacing the geometry releases old GPU buffers; replacing just its
+      // attributes would leave ownership of previously uploaded arrays unclear.
+      const previous=this.batchGeometry;this.batchGeometry=new THREE.BufferGeometry();this.batch.geometry=this.batchGeometry;previous.dispose();
+      for(const name of ['position','color'])this.batchGeometry.setAttribute(name,new THREE.BufferAttribute(new Float32Array(this.capacity*3),3).setUsage(THREE.DynamicDrawUsage));
+    }
+    if(this.vertices){
+      const positions=this.batchGeometry.getAttribute('position') as THREE.BufferAttribute,colors=this.batchGeometry.getAttribute('color') as THREE.BufferAttribute;
+      let offset=0;
+      for(const {mesh}of this.entries.values()){
+        const source=mesh.geometry.getAttribute('position'),color=mesh.geometry.getAttribute('color');
+        for(let i=0;i<source.count;i++){
+          this.scratch.fromBufferAttribute(source,i).applyMatrix4(mesh.matrix);
+          positions.setXYZ(offset,this.scratch.x,this.scratch.y,this.scratch.z);
+          colors.setXYZ(offset,color.getX(i),color.getY(i),color.getZ(i));offset++;
+        }
+      }
+      for(const attribute of [positions,colors]){attribute.clearUpdateRanges();attribute.addUpdateRange(0,this.vertices*3);attribute.needsUpdate=true;}
+    }
+    this.batchGeometry.setDrawRange(0,this.vertices);
+  }
+  get snapshot(){return {batching:this.batching,stains:this.entries.size,vertices:this.vertices,capacity:this.capacity,drawCalls:this.batching?(this.vertices?1:0):[...this.entries.values()].filter(e=>e.mesh.geometry.getAttribute('position').count>0).length};}
   get count(){return this.entries.size;}
-  dispose(){for(const e of this.entries.values()){e.mesh.geometry.dispose();(e.mesh.material as THREE.Material).dispose();}this.entries.clear();this.group.clear();}
+  dispose(){for(const e of this.entries.values())e.mesh.geometry.dispose();this.batchGeometry.dispose();this.material.dispose();this.entries.clear();this.group.clear();this.capacity=this.vertices=0;}
 }

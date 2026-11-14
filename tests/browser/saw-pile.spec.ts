@@ -26,7 +26,8 @@ test('held aimed saw cuts a real settled pile, preserves survivors and runs twen
    const pose=g.saw.pose();
    const targets=[...g.physics.parts.values()].filter(p=>p.owner==='npc').map(p=>({p,point:{...p.body.worldCom()}})).sort((a,b)=>Math.hypot(a.point.x-pose.base.x,a.point.y-pose.base.y)-Math.hypot(b.point.x-pose.base.x,b.point.y-pose.base.y));
    if(targets[0])g.saw.aim={x:targets[0].point.x,y:targets[0].point.y,z:0};
-   const input=g.input.consume(),cut=g.saw.update(input,1/60);g.gore.sawContact(g.saw.contact,1/60);if(cut){removed+=cut.removedMass;g.gore.cut(cut,g.physics);}
+   const cutMass=()=>{const event=g.saw.lastCut;if(event){removed+=event.removedMass;g.gore.cut(event,g.physics);}for(const guard of g.saw.guard.cuts)if(guard!==event){removed+=guard.removedMass;g.gore.cut(guard,g.physics);}};
+   const input=g.input.consume();g.saw.update(input,1/60);g.gore.sawContact(g.saw.contact,1/60);cutMass();
    g.physics.step();g.gore.update(g.physics,1/60);goreTimes.push(g.gore.updateMs);g.player.afterStep(g.now);g.now+=1/60;
    maxParts=Math.max(maxParts,g.physics.parts.size);maxWounds=Math.max(maxWounds,g.gore.wounds.length);
   }}finally{g.input.consume=original;g.saw.cancel();}

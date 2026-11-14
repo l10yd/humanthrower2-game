@@ -1,5 +1,7 @@
 # HUMANTHROWER — Technical Design Document
 
+> **Актуальный default-контракт и новый план:** [docs/MVP_PLAN.md](docs/MVP_PLAN.md). Первый CPU/query/recovery этап описан там; historical runtime overrides ниже сохраняются как история. `<25 m/s / <35 rad/s` physics gates и hardware performance acceptance не ослаблены.
+
 ## Runtime продолжение — mass-aware COM support pressure
 
 Capturedmicroshinmass2.508mg received10.464Nsstandingweight→beforestepvY−4.172million. Narrowfix supportImpulseCapacity=actualpartmass×4, newstanding+landingcombinedperpartstep, oldtotal16/32/perbody8/16capsandzero-torqueCOMmodelpreserved. Existingvelocityuntouched/noheuristicdeletion/contactbypass/eigenframephysicschange.50/80/120kgfixture/100jumpsrealplatform/pile oldbudgetsPASS. Exactfragmentpropertiesfrombirth3seedsnotstable/keptOFF; inputfix3seed45sremainingv19.88–79.53/ω90–1570stillFAIL25/35. Records3.2isolatehistory, full336unit/91browserPASSwithonepreservedangularFAILeach/buildPASS; THIN_PHYSICS.md. Nativeeigenframe/contactfixstillrequiresisolatedrebuilddecision.

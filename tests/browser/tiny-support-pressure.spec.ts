@@ -1,3 +1,4 @@
+import { RULES_VERSION } from '../../src/gameplay/RecordStore';
 import {test,expect} from '@playwright/test';
 test('upright controller pressure on a real tiny collider is mass-bounded without clamping prior velocity',async({page})=>{
  await page.goto('/');await expect(page.locator('#start')).toBeEnabled();
@@ -12,5 +13,5 @@ test('upright controller pressure on a real tiny collider is mass-bounded withou
   part.body.setLinvel({x:0,y:-100,z:0},true);g.player.grounded=false;g.player.jump.vy=-24;g.player.update({axis:0,pressed:false,released:false,stomp:false},1,1/60);
   return {mass:part.body.mass(),total:calls.reduce((s,n)=>s+n,0),velocity:part.body.linvel().y,kept:g.physics.parts.has(part.id),dynamic:part.body.isDynamic(),version:g.recordProfile.rulesVersion};
  });
- expect(r.total/r.mass).toBeLessThanOrEqual(4+1e-5);expect(r.total).toBeGreaterThan(0);expect(r.velocity).toBeLessThanOrEqual(-100);expect(r.velocity).toBeGreaterThanOrEqual(-104.001);expect(r.kept).toBe(true);expect(r.dynamic).toBe(true);expect(r.version).toBe('3.2-mass-aware-support-pressure');
+ expect(r.total/r.mass).toBeLessThanOrEqual(4+1e-5);expect(r.total).toBeGreaterThan(0);expect(r.velocity).toBeLessThanOrEqual(-100);expect(r.velocity).toBeGreaterThanOrEqual(-104.001);expect(r.kept).toBe(true);expect(r.dynamic).toBe(true);expect(r.version).toBe(RULES_VERSION);
 });

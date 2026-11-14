@@ -12,6 +12,8 @@
 #app[data-state="GAME_OVER"] #overlay{animation:loss-fade .65s ease-out both;z-index:5}
 @keyframes death-flash{from{background-color:#a6282680}to{background-color:transparent}}
 @keyframes loss-fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+#row-warning{position:absolute;z-index:5;bottom:8px;left:50%;transform:translateX(-50%);max-width:calc(100% - 24px);padding:8px 12px;border:2px dashed #ffd383;background:#20180cf2;color:#fff0c9;font-size:12px;text-align:center;pointer-events:none}#row-warning[hidden]{display:none}
+@media(max-width:800px){#row-warning{bottom:auto;top:44px;font-size:10px;max-width:calc(100% - 16px)}}
 #chaos-banner{position:absolute;z-index:4;top:12px;left:50%;transform:translateX(-50%);max-width:calc(100% - 24px);padding:9px 14px;border:1px solid #cc9b51;background:#19160bed;color:#ffe4a3;font-size:12px;text-align:center;pointer-events:none}
 #chaos-banner[hidden]{display:none}#chaos-banner[data-warning="true"]{border-color:#e57253;color:#ffb497}
 #stats{white-space:pre-line}#stats[data-danger="true"]{color:#ffb393}
@@ -46,6 +48,7 @@ header{height:72px;min-height:72px;flex:0 0 72px;overflow:hidden}header>div:firs
 footer{display:grid;grid-template-columns:minmax(220px,30%) minmax(0,1fr);grid-template-rows:42px 48px;gap:4px 12px;height:104px;min-height:104px;flex:0 0 104px;padding:5px 0;overflow:hidden}
 #player-status,#hint{display:block;min-width:0;max-width:none;height:42px;overflow:hidden;overflow-wrap:anywhere;line-height:14px;align-self:start}
 .tools{grid-column:1/-1;display:flex;flex-wrap:nowrap;flex:none;gap:6px;min-width:0;height:48px;overflow-x:auto;overflow-y:hidden;align-items:center;scrollbar-width:thin;white-space:nowrap}
+#weapon-durability{flex:0 0 132px;width:132px;overflow:hidden;text-overflow:ellipsis}
 .tools>*{flex-shrink:0}.tools button{height:36px;padding:8px 10px}#saw-mode{width:190px;text-align:center}#sound{width:110px}.tools label{height:36px}.tools select{max-width:180px}
 @media(pointer:coarse){
  #app{padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right))}

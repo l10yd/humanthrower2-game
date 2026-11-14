@@ -13,5 +13,5 @@ it('ties sort by rows then survival duration and snapshots cannot modify storage
 });
 it('result breakdown separates row points and survival seconds and has tips for every cause',()=>{
  const score=new ScoreManager();score.points=300;const r=record(score.total(65.9),65.9),details={rowPoints:300,events:3,weapons:4,broken:1,medkits:2,escapes:1};
- const result=runBreakdown(r,details);expect(r.score).toBe(365);expect(result[0].value).toBe('300');expect(result[1].value).toBe('+65');expect(result[2].value).toBe('1:05');expect(formatDuration(0)).toBe('0:00');expect(Object.keys(LOSS_TIPS)).toHaveLength(6);
+ const result=runBreakdown(r,details);expect(r.score).toBe(365);expect(result[0].value).toBe('300');expect(result[1].value).toBe('+65');expect(result[2].value).toBe('1:05');expect(formatDuration(0)).toBe('0:00');expect(Object.keys(LOSS_TIPS)).toHaveLength(7);expect(LOSS_TIPS.ACID).toContain('кислота');
 });

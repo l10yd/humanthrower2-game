@@ -5,9 +5,9 @@ for(const kind of ['svarlHead','rotor'] as const)test(`${kind} head immunity, re
  const result=await page.evaluate(async kind=>{
   // @ts-expect-error Vite module fixture URL
   const {box}=await import('/src/slicing/ConvexClipper.ts');
-  const g=window.humanthrower;g.restart();g.pause();g.scheduler.next=g.scheduler.nextBurst=1e9;
+  const g=window.humanthrower;g.restart();g.pause();g.scheduler.next=g.scheduler.nextBurst=g.chaos.nextWeapon=g.chaos.nextEvent=1e9;
   const idle={axis:0,pressed:false,released:false,stomp:false},step=(held=true)=>{g.input.consume=()=>({...idle,saw:held});g.state='RUNNING';(g as unknown as {fixedUpdate():void}).fixedUpdate();g.state='PAUSED';};
-  g.weapons.select(kind);g.player.damage.parts.head=.8;
+  g.weapons.collect(kind);g.weapons.collect('saw');g.weapons.select(kind);g.player.damage.parts.head=.8;
   g.player.collider.setEnabled(false);g.player.ragdoll.knockDown({x:0,y:2.15,z:0},{x:0,y:0,z:0},g.now);
   const head=g.player.ragdoll.parts.find(p=>p.limb==='head')!,headId=head.id,headPoly=head.poly;
   g.detector.arm(3,g.now);g.detector.rows[3].fireAt=g.now;step();

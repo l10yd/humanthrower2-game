@@ -9,7 +9,7 @@ export function validateAudio(value:unknown):AudioSettings {
 export function browserAudioStorage():StorageLike|null {try{return window.localStorage;}catch{return null;}}
 /** Procedural placeholder SFX. No downloaded samples, no gameplay RNG/timers.
  * Graph creation/resume happens ONLY from a real user gesture, never an RAF tick. */
-interface Voice {source:AudioScheduledSourceNode;gain:GainNode;extra?:AudioNode;kind:'cut'|'impact'}
+interface Voice {source:AudioScheduledSourceNode;gain:GainNode;extra?:AudioNode;kind:'cut'|'impact'|'warning'}
 export class GameAudio {
   settings:AudioSettings;available=true;
   private context:AudioContext|null=null;private master:GainNode|null=null;
@@ -17,6 +17,7 @@ export class GameAudio {
   private motor:OscillatorNode|null=null;private second:OscillatorNode|null=null;private filter:BiquadFilterNode|null=null;
   private sources:AudioScheduledSourceNode[]=[];private nodes:AudioNode[]=[];
   private voices=new Set<Voice>();private noise:AudioBuffer|null=null;
+  warningSounds=0;
   impactSounds=0;
   private running=false;private active=false;private cutting=false;private disposed=false;
   constructor(private storage:StorageLike|null=null,private factory:()=>AudioContext=()=>new AudioContext()){
@@ -94,7 +95,17 @@ export class GameAudio {
     gain.gain.setValueAtTime(.25+.55*strength,time);gain.gain.exponentialRampToValueAtTime(.001,time+.28);
     this.voices.add(voice);source.onended=()=>this.removeVoice(voice);source.start(time);source.stop(time+.3);this.impactSounds++;
   }
-  resetSession(){this.setRunning(false);this.impactSounds=0;}
+  warning(){
+    const ctx=this.context;if(!ctx||!this.master||!this.running||!this.settings.enabled||!this.settings.volume||ctx.state!=='running')return;
+    const previous=[...this.voices].find(v=>v.kind==='warning');if(previous)this.removeVoice(previous);
+    if(this.voices.size>=8){const impact=[...this.voices].find(v=>v.kind==='impact');if(!impact)return;this.removeVoice(impact);}
+    const source=ctx.createOscillator(),gain=ctx.createGain(),voice:Voice={source,gain,kind:'warning'},time=ctx.currentTime;
+    source.type='square';source.frequency.setValueAtTime(660,time);source.frequency.setValueAtTime(880,time+.035);
+    gain.gain.setValueAtTime(.18,time);gain.gain.exponentialRampToValueAtTime(.001,time+.075);
+    source.connect(gain);gain.connect(this.master);this.voices.add(voice);source.onended=()=>this.removeVoice(voice);
+    source.start(time);source.stop(time+.08);this.warningSounds++;
+  }
+  resetSession(){this.setRunning(false);this.impactSounds=0;this.warningSounds=0;}
   private removeVoice(voice:Voice){
     if(!this.voices.delete(voice))return;voice.source.onended=null;try{voice.source.stop();}catch{/* already ended */}voice.source.disconnect();voice.extra?.disconnect();voice.gain.disconnect();
   }
@@ -106,6 +117,6 @@ export class GameAudio {
     if(context&&context.state!=='closed')void context.close().catch(()=>{});
   }
   get snapshot(){return {enabled:this.settings.enabled,volume:this.settings.volume,initialized:this.context!==null,available:this.available,
-    active:this.running&&this.active&&this.settings.enabled&&this.settings.volume>0,cutting:this.running&&this.cutting&&this.settings.enabled&&this.settings.volume>0,voices:this.voices.size,impactSounds:this.impactSounds,disposed:this.disposed};}
+    active:this.running&&this.active&&this.settings.enabled&&this.settings.volume>0,cutting:this.running&&this.cutting&&this.settings.enabled&&this.settings.volume>0,voices:this.voices.size,impactSounds:this.impactSounds,warningSounds:this.warningSounds,disposed:this.disposed};}
   dispose(){this.running=false;this.active=false;this.cutting=false;this.disposed=true;this.destroy();}
 }

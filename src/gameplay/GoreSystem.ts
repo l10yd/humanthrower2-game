@@ -13,7 +13,7 @@ interface Bleeder extends Wound {life:number;next:number}
 /** Read-only swept visual particles; no colliders, forces, physics RNG or mesh edits. */
 export class GoreSystem {
   drops:BloodDrop[]=[];stains:BloodStain[]=[];wounds:Bleeder[]=[];emitted=0;
-  mode:BloodMode;updateMs=0;rayTests=0;
+  mode:BloodMode;updateMs=0;rayTests=0;candidateChecks=0;
   private sprayBudget=0;private random=randomSeed(70413);
   constructor(private storage:BloodStorage|null=null){this.mode=readBlood(storage);}
   configure(value:unknown){this.mode=validateBlood(value);saveBlood(this.storage,this.mode);
@@ -92,7 +92,7 @@ export class GoreSystem {
     this.stain(hit.point,hit.normal,hit.part);return true;
   }
   update(physics:PhysicsManager,dt:number){
-    const start=performance.now();this.rayTests=0;
+    const start=performance.now();this.rayTests=0;this.candidateChecks=0;
     if(this.mode==='off'){this.updateMs=performance.now()-start;return;}
     this.stains=this.stains.filter(s=>{s.age+=dt;return s.partId===undefined||physics.parts.has(s.partId);});
     this.wounds=this.wounds.filter(w=>{
@@ -113,9 +113,10 @@ export class GoreSystem {
         if(this.impact(physics,query,drop,from,to))return false;
         drop.position=to;return drop.life>0&&to.y>=0&&to.y<=CONFIG.arena.height&&Math.abs(to.x)<=CONFIG.arena.width/2&&Math.abs(to.z)<=CONFIG.arena.depth/2;
       });
+      this.candidateChecks=query.candidateChecks;
     }
     this.updateMs=performance.now()-start;
   }
-  reset(){this.drops=[];this.stains=[];this.wounds=[];this.emitted=0;this.sprayBudget=0;this.random=randomSeed(70413);this.rayTests=0;this.updateMs=0;}
-  get snapshot(){return {mode:this.mode,drops:this.drops.length,stains:this.stains.length,bodyStains:this.stains.filter(s=>s.partId!==undefined).length,wounds:this.wounds.length,emitted:this.emitted};}
+  reset(){this.drops=[];this.stains=[];this.wounds=[];this.emitted=0;this.sprayBudget=0;this.random=randomSeed(70413);this.rayTests=0;this.candidateChecks=0;this.updateMs=0;}
+  get snapshot(){return {mode:this.mode,drops:this.drops.length,stains:this.stains.length,bodyStains:this.stains.filter(s=>s.partId!==undefined).length,wounds:this.wounds.length,emitted:this.emitted,rayTests:this.rayTests,candidateChecks:this.candidateChecks,updateMs:this.updateMs};}
 }

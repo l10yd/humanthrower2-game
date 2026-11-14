@@ -2,7 +2,7 @@ import { CONFIG } from '../../src/core/Config';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { OccupancyRaster } from '../../src/grid/OccupancyRaster';
 import { PhysicsManager, RAPIER } from '../../src/physics/PhysicsManager';
-import { box } from '../../src/slicing/ConvexClipper';
+import { box,subtractSlabs } from '../../src/slicing/ConvexClipper';
 import { identity, vec, axisAngle } from '../../src/slicing/Math';
 beforeAll(async()=>{await RAPIER.init();});
 describe('bounded physical occupancy / footprint cache',()=>{
@@ -31,6 +31,18 @@ describe('bounded physical occupancy / footprint cache',()=>{
    }
    r.rebuild(p.parts.values());expect(r.cacheHits).toBeGreaterThan(0);
    p.removePart(a.id);r.rebuild(p.parts.values());expect(r.cacheSize).toBe(1);expect(r.rows[0].mean).toBeGreaterThan(0);
+  }finally{p.dispose();}
+ });
+ it('fast half-space rejection exactly matches original clipping for rotated cut hulls and boundaries',()=>{
+  const p=new PhysicsManager();try{
+   const fast=new OccupancyRaster(),reference=new OccupancyRaster();reference.fastClipping=false;
+   for(let i=0;i<40;i++){
+    const original=box(.12+(i%5)*.13,.08+(i%7)*.19,.05+(i%3)*.2);
+    const pieces=i%2?subtractSlabs(original,vec(0,1,0),[{lower:-.003,upper:.017}]):[original];
+    for(const poly of pieces)p.createPart(poly,{position:vec((i%9-4)*1.09,-.05+Math.floor(i/9)*3.99,(i%5-2)*.66),rotation:axisAngle(vec(.6,.8,0),i*.37)},10,i+1,'cut');
+   }
+   fast.rebuild(p.parts.values(),false);reference.rebuild(p.parts.values(),false);
+   expect(fast.map).toEqual(reference.map);expect(fast.stable).toEqual(reference.stable);expect(fast.overflow).toEqual(reference.overflow);expect(fast.rows).toEqual(reference.rows);expect(fast.criticalColumns()).toEqual(reference.criticalColumns());
   }finally{p.dispose();}
  });
  it('overflow uses stricter stable geometry and rejects a fast high-flying body',()=>{

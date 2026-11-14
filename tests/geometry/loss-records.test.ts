@@ -14,7 +14,7 @@ describe('validated profile-specific records with storage fallback',()=>{
  it('saves only top 10, survives corruption and separates assisted records',()=>{const map=new Map<string,string>(),store=new RecordStore({getItem:k=>map.get(k)??null,setItem:(k,v)=>{map.set(k,v);}});for(let i=0;i<20;i++)store.save(record(i));expect(store.list(record()).map(r=>r.score)).toEqual([19,18,17,16,15,14,13,12,11,10]);expect(store.list({...record(),assisted:true})).toEqual([]);const key=[...map.keys()][0];map.set(key,JSON.stringify([record(2),{...record(),score:'bad'},{...record(),profile:'mobile'}]));expect(store.list(record()).map(r=>r.score)).toEqual([2]);map.set(key,'{bad');expect(()=>store.list(record())).not.toThrow();});
  it('automatic QTE recovery does not mix earlier landing-pressure records',()=>{
   const store=new RecordStore(null),old={...record(9999),rulesVersion:'2.5-shared-landing-pressure'};
-  store.save(old);store.save(record(50));expect(RULES_VERSION).toBe('3.6-optional-head-control-faults');expect(store.list(record()).map(r=>r.score)).toEqual([50]);expect(store.list(old).map(r=>r.score)).toEqual([9999]);
+  store.save(old);store.save(record(50));expect(RULES_VERSION).toBe('3.8-acid-pile-event');expect(store.list(record()).map(r=>r.score)).toEqual([50]);expect(store.list(old).map(r=>r.score)).toEqual([9999]);
  });
  it('finite QTE protection does not mix records from the permanent-immunity bug',()=>{
   const store=new RecordStore(null),old={...record(9999),rulesVersion:'3.2-mass-aware-support-pressure'};
@@ -26,6 +26,14 @@ describe('validated profile-specific records with storage fallback',()=>{
  });
  it('human-scale loads and heavy QTE decay do not mix earlier mass rules',()=>{
   const store=new RecordStore(null),old={...record(9999),rulesVersion:'3.4-head-weapon-immunity-consumption'};
+  store.save(old);store.save(record(50));expect(store.list(record()).map(r=>r.score)).toEqual([50]);expect(store.list(old).map(r=>r.score)).toEqual([9999]);
+ });
+ it('acid gameplay keeps pre-acid records separate',()=>{
+  const store=new RecordStore(null),old={...record(9999),rulesVersion:'3.7-contained-arcade-recovery'};
+  store.save(old);store.save({...record(50),lossReason:'ACID'});expect(store.list(record())[0].lossReason).toBe('ACID');expect(store.list(old)[0].score).toBe(9999);
+ });
+ it('contained recovery stays separate from pre-containment results',()=>{
+  const store=new RecordStore(null),old={...record(9999),rulesVersion:'3.6-optional-head-control-faults'};
   store.save(old);store.save(record(50));expect(store.list(record()).map(r=>r.score)).toEqual([50]);expect(store.list(old).map(r=>r.score)).toEqual([9999]);
  });
  it('optional head-control rules stay separate from mandatory trauma results',()=>{

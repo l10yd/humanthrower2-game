@@ -2,15 +2,14 @@ import { test, expect } from '@playwright/test';
 test('targeted NPC drop, stable visual IDs, pause and won QTE recovery',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
-  await page.goto('/');await expect(page.locator('#start')).toBeEnabled();await page.locator('#start').click();
+  await page.goto('/?debug');await expect(page.locator('#start')).toBeEnabled();await page.locator('#start').click();
+  await page.evaluate(()=>{const g=window.humanthrower;g.scheduler.next=g.scheduler.nextBurst=g.chaos.nextEvent=g.chaos.nextWeapon=1e9;});
   const visualIds=await page.evaluate(()=>{
     const r=window.humanthrower.renderer as unknown as {playerMeshes:Map<string,{uuid:string}>};
     return [...r.playerMeshes.values()].map(m=>m.uuid);
   });
   await page.locator('#impact').click();
-  // Isolate this targeted player fixture from the separate chaos schedule.
-  await page.evaluate(()=>{window.humanthrower.scheduler.next=1e9;window.humanthrower.scheduler.nextBurst=1e9;});
-  await page.waitForFunction(()=>window.humanthrower.player.ragdoll.down,null,{timeout:25000});
+  await expect.poll(()=>page.evaluate(()=>window.humanthrower.player.ragdoll.down),{timeout:25000}).toBe(true);
   const hit=await page.evaluate(()=>window.humanthrower.debugSnapshot());
   expect(hit.knockdowns).toBeGreaterThan(0);expect(hit.playerParts).toBe(11);expect(hit.playerVisualParts).toBe(11);
   expect(await page.evaluate(()=>[...(window.humanthrower.renderer as unknown as {playerMeshes:Map<string,{uuid:string}>}).playerMeshes.values()].map(m=>m.uuid))).toEqual(visualIds);

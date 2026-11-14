@@ -10,7 +10,10 @@
     "balance:bot": "node scripts/balance-sessions.mjs",
     "validate:asset": "node scripts/validate-character.mjs",
     "test": "vitest run",
-    "test:demo": "vitest run tests/physics/chaos-demo.test.ts tests/physics/medical-hazards.test.ts tests/physics/offscreen-entry.test.ts tests/geometry/run-summary.test.ts && playwright test tests/browser/chaos-demo.spec.ts tests/browser/chaos-polish.spec.ts tests/browser/medical-hazards.spec.ts tests/browser/offscreen-entry.spec.ts tests/browser/sky-entry.spec.ts tests/browser/sky-restart.spec.ts tests/browser/run-summary.spec.ts",
+    "test:demo": "vitest run tests/physics/chaos-demo.test.ts tests/physics/acid.test.ts tests/physics/medical-hazards.test.ts tests/physics/offscreen-entry.test.ts tests/geometry/run-summary.test.ts && playwright test tests/browser/acid.spec.ts tests/browser/chaos-demo.spec.ts tests/browser/chaos-polish.spec.ts tests/browser/medical-hazards.spec.ts tests/browser/offscreen-entry.spec.ts tests/browser/sky-entry.spec.ts tests/browser/sky-restart.spec.ts tests/browser/run-summary.spec.ts",
+    "profile:default": "npm run build && node scripts/profile-default.mjs",
+    "test:performance": "playwright test tests/browser/mvp-performance.spec.ts",
+    "test:mvp": "npm run check && npm run test:browser",
     "test:browser": "playwright test",
     "check": "npm run test && npm run build"
   },

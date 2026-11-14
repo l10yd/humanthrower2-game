@@ -1,0 +1,24 @@
+import {expect,it,vi} from 'vitest';
+import * as THREE from 'three';
+import { BloodDecals } from '../../src/rendering/BloodDecals';
+import type { Part } from '../../src/physics/PhysicsManager';
+import type {BloodStain} from '../../src/gameplay/GoreSystem';
+import {box} from '../../src/slicing/ConvexClipper';
+import {vec} from '../../src/slicing/Math';
+it('body decals share one material while retaining separate geometry, transforms and drying colors',()=>{
+ const decals=new BloodDecals(),poly=box(.5,.5,.2),part={id:1,poly} as Part,visual=new THREE.Mesh();visual.position.set(1,2,3);
+ const fresh:BloodStain={position:vec(0,0,.2),normal:vec(0,0,1),size:.1,angle:0,age:0,partId:1};
+ const dry={...fresh,age:30,position:vec(.2,0,.2)};
+ const parts=new Map([[1,part]]),visuals=new Map([[1,visual]]);
+ decals.update([fresh,dry],parts,visuals,true);
+ const [a,b]=decals.group.children.filter(o=>o!==decals.batch) as THREE.Mesh[];expect(a.material).toBe(b.material);expect(a.geometry).not.toBe(b.geometry);
+ expect(a.position).toEqual(visual.position);expect(a.geometry.getAttribute('color').getX(0)).toBeGreaterThan(b.geometry.getAttribute('color').getX(0));
+ expect(a.visible).toBe(false);expect(b.visible).toBe(false);expect(decals.batch.visible).toBe(true);expect(decals.snapshot.drawCalls).toBe(1);
+ const first=a.geometry.getAttribute('position'),batched=decals.batch.geometry.getAttribute('position');
+ const expected=new THREE.Vector3().fromBufferAttribute(first,0).applyMatrix4(a.matrix);
+ expect(batched.getX(0)).toBeCloseTo(expected.x,6);expect(batched.getY(0)).toBeCloseTo(expected.y,6);expect(batched.getZ(0)).toBeCloseTo(expected.z,6);
+ const upload=(decals.batch.geometry.getAttribute('position') as THREE.BufferAttribute).version;
+ decals.update([fresh,dry],parts,visuals,true);expect((decals.batch.geometry.getAttribute('position') as THREE.BufferAttribute).version).toBe(upload);
+ const dispose=vi.spyOn(a.material as THREE.Material,'dispose');decals.update([dry],parts,visuals,true);expect(decals.count).toBe(1);expect(dispose).not.toHaveBeenCalled();
+ decals.dispose();expect(dispose).toHaveBeenCalledOnce();expect(decals.count).toBe(0);
+});

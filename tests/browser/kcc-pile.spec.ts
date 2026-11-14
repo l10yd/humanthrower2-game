@@ -1,3 +1,4 @@
+import { RULES_VERSION } from '../../src/gameplay/RecordStore';
 import { test,expect } from '@playwright/test';
 test('real browser KCC landing shares one pressure budget between two dynamic supports',async({page})=>{
  await page.goto('/');await expect(page.locator('#start')).toBeEnabled();await page.locator('#start').click();await page.locator('#pause').click();
@@ -18,11 +19,11 @@ test('real browser KCC landing shares one pressure budget between two dynamic su
    return {grounded:g.player.grounded,landing,weight: calls.reduce((s,c)=>s+c.filter((_,i)=>i%2===0).reduce((n,v)=>n+v,0),0),limits:CONFIG.playerContact,recordVersion:g.recordProfile.rulesVersion,allDynamic:parts.every(p=>p.body.isDynamic())};
   }finally{parts.forEach((p,i)=>{p.body.applyImpulse=originals[i];});}
  });
- expect(result.grounded).toBe(true);expect(result.allDynamic).toBe(true);expect(result.recordVersion).toBe('3.2-mass-aware-support-pressure');
+ expect(result.grounded).toBe(true);expect(result.allDynamic).toBe(true);expect(result.recordVersion).toBe(RULES_VERSION);
  expect(result.landing.flat().reduce((s,n)=>s+n,0)).toBeGreaterThan(0);expect(result.landing.flat().reduce((s,n)=>s+n,0)).toBeLessThanOrEqual(result.limits.landingTotal+1e-6);expect(result.landing.flat().every(n=>n<=result.limits.landingPerBody+1e-6)).toBe(true);expect(result.weight).toBeCloseTo(64*9.81/60,4);
 });
 
-test('real sleeping NPC pile supports twenty normal jumps and bounded disturbances in Chromium',async({page},testInfo)=>{
+test('original open-arena sleeping pile supports twenty normal jumps and bounded disturbances in Chromium',async({page},testInfo)=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
  await page.goto('/');await expect(page.locator('#start')).toBeEnabled();await page.locator('#start').click();await page.locator('#pause').click();
  const result=await page.evaluate(async()=>{
@@ -31,21 +32,24 @@ test('real sleeping NPC pile supports twenty normal jumps and bounded disturbanc
   // @ts-expect-error Vite fixture module URL
   const {randomSeed,CONFIG}=await import('/src/core/Config.ts');
   // @ts-expect-error Vite fixture module URL
-  const {RAPIER}=await import('/src/physics/PhysicsManager.ts');
+  const {RAPIER,PhysicsManager}=await import('/src/physics/PhysicsManager.ts');
+  // @ts-expect-error Vite fixture module URL
+  const {PlayerController}=await import('/src/player/PlayerController.ts');
   const g=window.humanthrower;g.restart();g.pause();g.scheduler.next=g.scheduler.nextBurst=1e9;
-  const p=g.physics,factory=new RagdollFactory(p,2,2),random=randomSeed(17),idle={axis:0,pressed:false,released:false,stomp:false};
-  // Player is not in the drop zone while preparing the fixture, but its original
-  // KCC and impact detection stay enabled during the actual exercise below.
-  g.player.collider.setEnabled(false);
+  // This is the original unit-test pile geometry (open 11-row arena), not a
+  // default chaos session. Keep its native collider ordering and assertions.
+  g.player.dispose();g.physics.dispose();const p=new PhysicsManager(false,11);g.physics=p;
+  const factory=new RagdollFactory(p,2,2),random=randomSeed(17),idle={axis:0,pressed:false,released:false,stomp:false};
   for(let n=0;n<6;n++){
    const angle=(random()-.5)*2.6,parts=factory.spawn(n%3===0?'heavy':'normal',{x:(n%3-1)*1.25,y:7+n%2,z:0},{x:0,y:0,z:Math.sin(angle/2),w:Math.cos(angle/2)});
    if(!parts)throw Error('fixture spawn blocked');for(let i=0;i<150;i++){p.step();g.now+=CONFIG.dt;}
   }
   for(let i=0;i<300;i++){p.step();g.now+=CONFIG.dt;}
   let top=-Infinity;
-  p.world.forEachCollider(c=>{if(p.partForCollider(c)?.owner!=='npc')return;const t=c.castRay(new RAPIER.Ray({x:0,y:10,z:0},{x:0,y:-1,z:0}),10,true);if(t>=0&&Number.isFinite(t))top=Math.max(top,10-t);});
+  p.world.forEachCollider((c:import('@dimforge/rapier3d-compat').Collider)=>{if(p.partForCollider(c)?.owner!=='npc')return;const t=c.castRay(new RAPIER.Ray({x:0,y:10,z:0},{x:0,y:-1,z:0}),10,true);if(t>=0&&Number.isFinite(t))top=Math.max(top,10-t);});
   if(!Number.isFinite(top))throw Error('fixture has no support');
   const sleeping=[...p.parts.values()].filter(b=>b.body.isSleeping()).length,ids=[...p.parts.keys()],mass=[...p.parts.values()].reduce((s,b)=>s+b.body.mass(),0),joints=p.joints.size;
+  g.player=new PlayerController(p,true);
   const center={x:0,y:top+CONFIG.player.height/2+.1,z:0};g.player.current={...center};g.player.previous={...center};g.player.body.setTranslation(center,true);g.player.body.setNextKinematicTranslation(center);g.player.collider.setEnabled(true);p.world.propagateModifiedBodyPositionsToColliders();
   const step=(pressed=false)=>{p.snapshot();g.player.update({...idle,pressed},g.now,CONFIG.dt);p.step();g.now+=CONFIG.dt;g.player.afterStep(g.now);};
   for(let i=0;i<120&&!g.player.grounded;i++)step();

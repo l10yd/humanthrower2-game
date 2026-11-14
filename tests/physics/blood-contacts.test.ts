@@ -51,7 +51,7 @@ describe('swept blood contacts and mode isolation',()=>{
   const p=new PhysicsManager();try{
    for(let i=0;i<80;i++)p.createPart(box(.1,.1,.1),{position:vec(100+i,2,0),rotation:identity},3,i+1,'distant');
    const gore=new GoreSystem();for(let i=0;i<40;i++)gore.drops.push({position:vec(0,3,0),velocity:vec(0,-2,0),life:1,size:.03});
-   gore.update(p,1/60);expect(gore.rayTests).toBe(0);expect(gore.drops.length).toBe(40);
+   gore.update(p,1/60);expect(gore.rayTests).toBe(0);expect(gore.candidateChecks).toBe(0);expect(gore.drops.length).toBe(40);
   }finally{p.dispose();}
  });
  it('all blood modes produce identical physical trajectories, masses and slice results',()=>{

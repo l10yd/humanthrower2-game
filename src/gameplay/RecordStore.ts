@@ -1,5 +1,5 @@
 import type { LossReason } from './LossDetector';
-export const RULES_VERSION='3.6-optional-head-control-faults';
+export const RULES_VERSION='3.8-acid-pile-event';
 export interface SessionRecord {
   rulesVersion:string;profile:'desktop'|'mobile';arenaPreset:string;assisted:boolean;seed:string;
   score:number;rows:number;durationSeconds:number;maxCombo:number;drops:number;lossReason:LossReason;
@@ -9,7 +9,7 @@ const valid=(r:unknown):r is SessionRecord=>{
   if(!r||typeof r!=='object')return false;const x=r as Record<string,unknown>;
   return typeof x.rulesVersion==='string'&&x.rulesVersion.length<=80&&(x.profile==='desktop'||x.profile==='mobile')
     &&typeof x.arenaPreset==='string'&&x.arenaPreset.length<=80&&typeof x.assisted==='boolean'
-    &&typeof x.seed==='string'&&x.seed.length<=80&&['ROW_CLEAR','RESILIENCE','OVERFLOW','SQUEEZE','IMPACT','SUFFOCATION'].includes(String(x.lossReason))
+    &&typeof x.seed==='string'&&x.seed.length<=80&&['ROW_CLEAR','RESILIENCE','OVERFLOW','SQUEEZE','IMPACT','SUFFOCATION','ACID'].includes(String(x.lossReason))
     &&['score','rows','drops'].every(k=>typeof x[k]==='number'&&Number.isSafeInteger(x[k])&&(x[k] as number)>=0&&(x[k] as number)<=1e9)
     &&typeof x.durationSeconds==='number'&&Number.isFinite(x.durationSeconds)&&x.durationSeconds>=0&&x.durationSeconds<=1e7
     &&typeof x.maxCombo==='number'&&Number.isFinite(x.maxCombo)&&x.maxCombo>=1&&x.maxCombo<=3;

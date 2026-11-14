@@ -35,6 +35,13 @@ describe('procedural game audio',()=>{
   audio.impact(20,72);expect(audio.snapshot.impactSounds).toBe(0);audio.dispose();
   for(const node of f.nodes)expect(node.disconnect).toHaveBeenCalled();
  });
+ it('warning voices require unlocked running audio, stay bounded, and stop on mute/pause',async()=>{
+  const f=fixture(),audio=new GameAudio(null,f.factory);audio.warning();expect(f.factory).not.toHaveBeenCalled();
+  audio.setRunning(true);audio.unlock();await Promise.resolve();for(let i=0;i<30;i++)audio.warning();
+  expect(audio.snapshot.warningSounds).toBe(30);expect(audio.snapshot.voices).toBe(1);
+  audio.setRunning(false);expect(audio.snapshot.voices).toBe(0);audio.warning();expect(audio.snapshot.warningSounds).toBe(30);
+  audio.resetSession();expect(audio.snapshot.warningSounds).toBe(0);audio.dispose();
+ });
  it('bounds one-shot voices, cleans every node/source, and persists settings without runtime timers',async()=>{
   const f=fixture(),store=new Map<string,string>(),storage={getItem:(key:string)=>store.get(key)??null,setItem:(key:string,value:string)=>{store.set(key,value);}};
   const audio=new GameAudio(storage,f.factory);audio.configure({volume:.6});audio.setRunning(true);audio.unlock();await Promise.resolve();

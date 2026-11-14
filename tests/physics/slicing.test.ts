@@ -1,4 +1,4 @@
-import { beforeAll, describe, it, expect } from 'vitest';
+import { beforeAll, describe, it, expect,vi } from 'vitest';
 import { PhysicsManager, RAPIER } from '../../src/physics/PhysicsManager';
 import { belowFragmentScale, clearRows } from '../../src/slicing/ClearTransaction';
 import { box, massProperties } from '../../src/slicing/ConvexClipper';
@@ -27,6 +27,29 @@ describe('physical clear transaction',()=>{
     expect(belowFragmentScale(box(.001,.001,.001))).toBe(true);
     expect(belowFragmentScale(box(.00001,.3,.00001))).toBe(false);
     expect(belowFragmentScale(box(.1,.1,.1))).toBe(false);
+  });
+  it('prepares each survivor collider only once before staged allocation',()=>{
+    const physics=new PhysicsManager();try{
+      physics.createPart(box(.2,2,.2),{position:vec(0,2,0),rotation:identity},24,1,'chest');
+      const prepare=vi.spyOn(physics,'prepareCollider'),result=clearRows(physics,[1],'solver');
+      expect(result.fragments).toBe(2);expect(prepare).toHaveBeenCalledTimes(result.fragments);
+    }finally{physics.dispose();}
+  });
+  it('rejects 300 distant intact parts before slab clipping without waking or replacing them',()=>{
+    const physics=new PhysicsManager();try{
+      const distant=[];for(let i=0;i<300;i++){const p=physics.createPart(box(.04,.04,.04),{position:vec((i%10-4.5)*.5,6+Math.floor(i/10)*.1,0),rotation:identity},1,i+1,'distant');p.body.sleep();distant.push(p);}
+      const cut=physics.createPart(box(.2,.2,.2),{position:vec(0,1.5,0),rotation:identity},5,1000,'cut');
+      const result=clearRows(physics,[1],'solver');expect(result.removedVolume).toBeGreaterThan(0);expect(physics.parts.has(cut.id)).toBe(false);
+      expect(physics.clearQueries).toEqual({scannedParts:301,clippedParts:1,skippedParts:300});
+      expect(distant.every(p=>physics.parts.get(p.id)===p&&p.body.isSleeping())).toBe(true);
+    }finally{physics.dispose();}
+  });
+  it('keeps the established dust cleanup outside the row but retains long thin strips',()=>{
+    const physics=new PhysicsManager();try{
+      const dust=physics.createPart(box(.001,.001,.001),{position:vec(0,6,0),rotation:identity},.001,1,'dust');
+      const strip=physics.createPart(box(.00001,.3,.00001),{position:vec(0,6,0),rotation:identity},.001,2,'strip');
+      clearRows(physics,[1],'solver');expect(physics.parts.has(dust.id)).toBe(false);expect(physics.parts.has(strip.id)).toBe(true);
+    }finally{physics.dispose();}
   });
   it('does not delete head or lower legs when cutting the middle body',()=>{
     const physics=new PhysicsManager();try {

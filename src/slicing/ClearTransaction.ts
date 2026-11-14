@@ -1,25 +1,37 @@
 import { connectorIntersectsSlabs } from '../physics/Connector';
 import { CONFIG } from '../core/Config';
 import { clip, contains, massProperties, subtractSlabs, vertices, type ConvexPolyhedron, type Interval } from './ConvexClipper';
-import { add, conjugate, mul, pointVelocity, rotate, vec } from './Math';
+import { add, conjugate, dot, mul, pointVelocity, rotate, vec } from './Math';
 import { PhysicsManager, type Joint, type Part, type Pose } from '../physics/PhysicsManager';
 interface Replacement { source:Part; pose:Pose; survivors:ConvexPolyhedron[] }
 export function belowFragmentScale(poly:ConvexPolyhedron):boolean {
+  // Most intact limbs are far above the conjunctive dust volume threshold.
+  // Do not weld vertices quadratically just to confirm their already-large mass.
+  if(massProperties(poly).volume>=1e-6)return false;
   const points=vertices(poly),size=Math.hypot(...(['x','y','z'] as const).map(k=>Math.max(...points.map(p=>p[k]))-Math.min(...points.map(p=>p[k]))));
-  return massProperties(poly).volume<1e-6&&size<.015;
+  return size<.015;
 }
 export interface ClearResult { transactionId:number; removedVolume:number; removedVolumeByRow:Record<number,number>; fragments:number; rows:number[] }
 /** Prepare geometry, then stage all fallible allocations before deleting ANY original body. */
 export function clearRows(physics:PhysicsManager,rows:number[],contacts:'legacy'|'solver'='legacy',includePlayer=false,protectedPlayerLimbs:readonly string[]=[]):ClearResult {
   const sorted=[...new Set(rows)].sort((a,b)=>a-b);
   if(!sorted.length||sorted.some(r=>!Number.isInteger(r)||r<0||r>=CONFIG.rows.count))throw Error('Invalid row');
+  const work=physics.clearQueries;work.scannedParts=work.clippedParts=work.skippedParts=0;
   const intervals:Interval[]=sorted.map(r=>({lower:r,upper:r+1}));const replacements:Replacement[]=[];
   let removedVolume=0;const removedVolumeByRow:Record<number,number>=Object.fromEntries(sorted.map(r=>[r,0]));
   for(const source of physics.parts.values()) {
     if(source.owner==='player'&&(!includePlayer||protectedPlayerLimbs.includes(source.limb)))continue;
+    work.scannedParts++;
     const pose={position:{...source.body.translation()},rotation:{...source.body.rotation()}};
     const n=rotate(vec(0,1,0),conjugate(pose.rotation));
     const local=intervals.map(i=>({lower:i.lower-pose.position.y,upper:i.upper-pose.position.y}));
+    let min=Infinity,max=-Infinity;
+    for(const face of source.poly.faces)for(const point of face.vertices){const y=dot(n,point);min=Math.min(min,y);max=Math.max(max,y);}
+    // Conservative half-space interval rejection; same local plane arithmetic as
+    // subtractSlabs, without welding/clipping uncut parts throughout the shaft.
+    // Dust outside the row still follows the existing conjunctive cleanup rule.
+    if(local.every(i=>max<i.lower-1e-9||min>i.upper+1e-9)&&!belowFragmentScale(source.poly)){work.skippedParts++;continue;}
+    work.clippedParts++;
     const kept=subtractSlabs(source.poly,n,local);
     // TDD numerical-dust rule is conjunctive: a long thin strip must survive even if
     // its volume is tiny. Only sub-15mm AND sub-1e-6m³ scraps are below gameplay scale.
@@ -32,7 +44,9 @@ export function clearRows(physics:PhysicsManager,rows:number[],contacts:'legacy'
       const slab=below&&clip(below,mul(n,-1),-local[i].lower);
       if(slab)removedVolumeByRow[sorted[i]]+=massProperties(slab).volume;
     }
-    for(const poly of survivors)physics.prepareCollider(poly,source.density);
+    // createPart validates and prepares each survivor during the atomic staging
+    // phase below. Preparing here too repeats hull validation/QuickHull, and the
+    // descriptor was discarded. Any failure still rolls back before originals.
     replacements.push({source,pose,survivors});removedVolume+=removed;
   }
   const finalCount=physics.parts.size-replacements.length+replacements.reduce((n,r)=>n+r.survivors.length,0);
@@ -93,7 +107,7 @@ export function clearRows(physics:PhysicsManager,rows:number[],contacts:'legacy'
   // as the saw, without legacy family-wide projection/pause in a crowded pile.
   physics.deferDetachedContacts(affectedFamilies,contacts==='solver');
   const wakeIslands=new Set<number>();
-  for(const p of physics.parts.values())for(const support of lostSupport)if(physics.connected(p.id,support)){wakeIslands.add(p.id);break;}
+  for(const support of lostSupport)for(const part of physics.connectedParts(support))wakeIslands.add(part.id);
   for(const id of wakeIslands)physics.parts.get(id)?.body.wakeUp();
   return {transactionId:++physics.clearSequence,removedVolume,removedVolumeByRow,fragments:staged.length,rows:sorted};
 }

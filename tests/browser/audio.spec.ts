@@ -7,7 +7,7 @@ test('audio unlocks on gesture, tracks saw contact, mutes immediately, pauses an
  await page.evaluate(async()=>{
   // @ts-expect-error browser Vite fixture URL
   const {box}=await import('/src/slicing/ConvexClipper.ts');
-  const g=window.humanthrower;g.scheduler.next=g.scheduler.nextBurst=1e9;
+  const g=window.humanthrower;g.scheduler.next=g.scheduler.nextBurst=g.chaos.nextEvent=g.chaos.nextWeapon=1e9;g.weapons.collect('saw');
   const part=g.physics.createPart(box(.3,.3,.22),{position:{x:.75,y:g.saw.pose().base.y,z:0},rotation:{x:0,y:0,z:0,w:1}},22,1,'chest');part.body.setGravityScale(0,true);
  });
  await page.keyboard.down('e');
@@ -38,13 +38,13 @@ test('audio unlocks on gesture, tracks saw contact, mutes immediately, pauses an
 });
 test('blade sound cannot continue after blur, death or WebGL loss',async({page})=>{
  await page.goto('/');await expect(page.locator('#start')).toBeEnabled();await page.locator('#start').click();
- await page.evaluate(()=>{const g=window.humanthrower;g.scheduler.next=g.scheduler.nextBurst=1e9;});
+ await page.evaluate(()=>{const g=window.humanthrower;g.scheduler.next=g.scheduler.nextBurst=g.chaos.nextEvent=g.chaos.nextWeapon=1e9;g.weapons.collect('saw');});
  await page.keyboard.down('e');await expect.poll(()=>page.evaluate(()=>window.humanthrower.audio.snapshot.active)).toBe(true);
  await page.evaluate(()=>window.dispatchEvent(new Event('blur')));expect(await page.evaluate(()=>window.humanthrower.audio.snapshot.active)).toBe(false);await page.keyboard.up('e');
  await page.keyboard.down('e');await expect.poll(()=>page.evaluate(()=>window.humanthrower.audio.snapshot.active)).toBe(true);
  await page.evaluate(()=>{(window.humanthrower as unknown as {finish(reason:string):void}).finish('IMPACT');});
  expect(await page.evaluate(()=>window.humanthrower.audio.snapshot.active)).toBe(false);expect(await page.evaluate(()=>window.humanthrower.audio.snapshot.voices)).toBe(0);await page.keyboard.up('e');
- await page.locator('#reset').click();await page.keyboard.down('e');await expect.poll(()=>page.evaluate(()=>window.humanthrower.audio.snapshot.active)).toBe(true);
+ await page.locator('#reset').click();await page.evaluate(()=>window.humanthrower.weapons.collect('saw'));await page.keyboard.down('e');await expect.poll(()=>page.evaluate(()=>window.humanthrower.audio.snapshot.active)).toBe(true);
  await page.evaluate(()=>window.humanthrower.renderer.renderer.getContext().getExtension('WEBGL_lose_context')!.loseContext());
  await expect.poll(()=>page.evaluate(()=>window.humanthrower.state)).toBe('PAUSED');expect(await page.evaluate(()=>window.humanthrower.audio.snapshot.active)).toBe(false);
 });

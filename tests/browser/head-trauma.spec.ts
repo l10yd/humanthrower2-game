@@ -24,7 +24,7 @@ test('lost arms and legs alone keep the session alive; zero head ends it',async(
   const g=window.humanthrower;g.restart();g.pause();g.scheduler.next=g.scheduler.nextBurst=1e9;g.state='RUNNING';
   for(const limb of Object.keys(g.player.damage.parts) as (keyof typeof g.player.damage.parts)[])if(!['head','chest','pelvis'].includes(limb))g.player.damage.retain(limb,0);
   (g as unknown as {fixedUpdate():void}).fixedUpdate();const survived=g.state==='RUNNING';
-  g.player.damage.parts.head=0;for(let i=0;i<10&&g.state==='RUNNING';i++)(g as unknown as {fixedUpdate():void}).fixedUpdate();
+  g.player.damage.parts.head=0;for(let i=0;i<130&&(g.state==='RUNNING'||g.state==='DYING');i++)(g as unknown as {fixedUpdate():void}).fixedUpdate();
   return {survived,result:g.result,damage:g.player.damage.snapshot};
  });
  expect(report.survived).toBe(true);expect(report.result?.lossReason).toBe('IMPACT');expect(report.damage.parts.chest).toBe(1);expect(report.damage.parts.pelvis).toBe(1);

@@ -1,5 +1,13 @@
 import { CONFIG } from '../core/Config';
 import { clip, vertices, type ConvexPolyhedron } from '../slicing/ConvexClipper';
+import { dot } from '../slicing/Math';
+/** Same half-space predicates as clip(), without vertex welding for unchanged
+ * or completely rejected hulls. Crossing geometry still uses the exact clipper. */
+function clipFootprint(poly:ConvexPolyhedron,n:Vec3,d:number):ConvexPolyhedron|null {
+ let inside=true,outside=true;
+ for(const face of poly.faces)for(const p of face.vertices){const distance=dot(n,p)-d;if(distance>1e-9)inside=false;if(distance< -1e-9)outside=false;}
+ if(inside)return poly;if(outside)return null;return clip(poly,n,d);
+}
 import { add, rotate, vec, type Vec3 } from '../slicing/Math';
 import type { Part } from '../physics/PhysicsManager';
 interface Point {x:number;y:number}
@@ -59,16 +67,18 @@ export class OccupancyRaster {
       result.push(n/(res*(this.height-y0)));
     }return result;
   }
+  fastClipping=true;
+  private halfSpace(poly:ConvexPolyhedron,n:Vec3,d:number){return this.fastClipping?clipFootprint(poly,n,d):clip(poly,n,d);}
   private project(world:ConvexPolyhedron):Uint32Array {
     let bounded:ConvexPolyhedron|null=world;
     for(const [n,d]of [[vec(1,0,0),CONFIG.arena.width/2],[vec(-1,0,0),CONFIG.arena.width/2],
       [vec(0,0,1),CONFIG.arena.depth/2],[vec(0,0,-1),CONFIG.arena.depth/2],
-      [vec(0,1,0),CONFIG.arena.height],[vec(0,-1,0),0]] as [Vec3,number][]){if(!bounded)break;bounded=clip(bounded,n,d);}
+      [vec(0,1,0),CONFIG.arena.height],[vec(0,-1,0),0]] as [Vec3,number][]){if(!bounded)break;bounded=this.halfSpace(bounded,n,d);}
     if(!bounded)return new Uint32Array();
     const points=vertices(bounded),bottom=Math.max(0,Math.floor(Math.min(...points.map(p=>p.y)))),top=Math.min(CONFIG.rows.count-1,Math.floor(Math.max(...points.map(p=>p.y))));
     const pixels:number[]=[];
     for(let row=bottom;row<=top;row++) {
-      const below=clip(bounded,vec(0,1,0),row+1),slab=below&&clip(below,vec(0,-1,0),-row);
+      const below=this.halfSpace(bounded,vec(0,1,0),row+1),slab=below&&this.halfSpace(below,vec(0,-1,0),-row);
       if(slab)this.raster(vertices(slab),row,pixels);
     }return Uint32Array.from(pixels);
   }

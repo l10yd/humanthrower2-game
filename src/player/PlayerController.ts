@@ -1,6 +1,4 @@
 import { CONFIG, PLAYER_SCALE } from '../core/Config';
-import { gameplayMass } from './GameplayMass';
-import { pileLoad } from './PileLoad';
 import { HeadTrauma } from './HeadTrauma';
 import { openRecoverySpace } from './RecoveryAssist';
 import { landingShares,supportImpulseCapacity } from './SupportPressure';
@@ -63,7 +61,7 @@ export class PlayerController {
       if(this.ragdoll.down&&this.qte.phase==='STANDING')this.qte.reset();
       const landed=this.ragdoll.refreshRecoveryContact();
       const needsHelp=this.ragdoll.down&&(landed||this.qte.ready)&&!this.ragdoll.dead&&(this.damage.mobility!=='CRAWL'||!this.ragdoll.locomotionReady);
-      if(needsHelp){this.ragdoll.loadMass=pileLoad(this.physics,this.ragdoll.parts);this.ragdoll.gameplayLoadMass=pileLoad(this.physics,this.ragdoll.parts,gameplayMass);}
+      if(needsHelp)this.ragdoll.refreshLoad(now);
       this.qte.update(input,needsHelp,dt,this.ragdoll.gameplayLoadMass,now);
       // complete() keeps 100% for the standing result; only an ongoing
       // recovery may renew immunity, otherwise the post-rise grace never ends.

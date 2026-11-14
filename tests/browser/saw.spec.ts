@@ -1,15 +1,15 @@
 import { test, expect } from '@playwright/test';
-test('default equipped saw, mouse aims, held E saws a physical torso; pause and restart clear effects',async({page})=>{
+test('collected saw, mouse aim and held E cut a physical torso; pause and restart clear effects',async({page})=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
  await page.goto('/');await expect(page.locator('#start')).toBeEnabled();await page.locator('#start').click();
  const target=await page.evaluate(async()=>{
   // @ts-expect-error browser Vite fixture URL
   const {box}=await import('/src/slicing/ConvexClipper.ts');
-  const g=window.humanthrower;g.scheduler.next=1e9;g.scheduler.nextBurst=1e9;
-  const part=g.physics.createPart(box(.3,.32,.22),{position:{x:.85,y:.67,z:0},rotation:{x:0,y:0,z:0,w:1}},22,1,'chest');
+  const g=window.humanthrower;g.scheduler.next=g.scheduler.nextBurst=g.chaos.nextEvent=g.chaos.nextWeapon=1e9;g.weapons.collect('saw');
+  const part=g.physics.createPart(box(.3,.32,.22),{position:{x:.85,y:g.saw.pose().base.y,z:0},rotation:{x:0,y:0,z:0,w:1}},22,1,'chest');
   part.body.setGravityScale(0,true);
   const r=g.renderer.renderer.domElement.getBoundingClientRect();
-  const point=g.renderer.camera.position.clone().set(.9,.67,0).project(g.renderer.camera);
+  const point=g.renderer.camera.position.clone().set(.9,g.saw.pose().base.y,0).project(g.renderer.camera);
   return {x:r.left+(point.x+1)*r.width/2,y:r.top+(1-point.y)*r.height/2};
  });
  await expect(page.locator('#saw-mode')).toHaveAttribute('aria-pressed','true');
@@ -20,12 +20,12 @@ test('default equipped saw, mouse aims, held E saws a physical torso; pause and 
  expect(await page.evaluate(()=>window.humanthrower.debugSnapshot())).toEqual(frozen);
  await page.locator('#resolution').selectOption('480x270');await page.screenshot({path:'test-results/saw-gore.png'});
  await page.locator('#reset').click();const reset=await page.evaluate(()=>window.humanthrower.debugSnapshot());
- expect(reset.saw.enabled).toBe(true);expect(reset.saw.cuts).toBe(0);expect(reset.gore.emitted).toBe(0);expect(reset.parts).toBe(0);
+ expect(reset.saw.enabled).toBe(false);expect(reset.weapons.inventory).toEqual({});expect(reset.saw.cuts).toBe(0);expect(reset.gore.emitted).toBe(0);expect(reset.parts).toBe(0);
  expect(errors).toEqual([]);
 });
 test('held pointer blade works without E and release cancels; seven enlarged NPC masses are exposed',async({page})=>{
  await page.goto('/');await expect(page.locator('#start')).toBeEnabled();await page.locator('#start').click();
- await page.evaluate(()=>{const g=window.humanthrower;g.scheduler.next=1e9;g.scheduler.nextBurst=1e9;});
+ await page.evaluate(()=>{const g=window.humanthrower;g.scheduler.next=g.scheduler.nextBurst=g.chaos.nextEvent=g.chaos.nextWeapon=1e9;g.weapons.collect('saw');});
  await expect(page.locator('#saw-mode')).toHaveAttribute('aria-pressed','true');const rect=await page.locator('#scene').boundingBox();
  await page.mouse.move(rect!.x+rect!.width*.6,rect!.y+rect!.height*.8);await page.mouse.down();
  await expect.poll(()=>page.evaluate(()=>window.humanthrower.saw.active)).toBe(true);await page.mouse.up();

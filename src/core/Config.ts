@@ -31,6 +31,7 @@ export const CONFIG = {
     dropIntervals:[4.8,4.3,3.8,3.4,3,2.7,2.5,2.3] },
   saw:{reach:2.1,halfWidth:.15,halfDepth:.76,cutSeconds:.19,cooldown:.09,kerf:.08,minPieceMass:.15,planeAngleTolerance:.21,planeOffsetTolerance:.12},
   impactFx:{minSpeed:2.5,minImpulse:4,npcCooldown:.5,pairCooldown:.18,maxPerSecond:8,maxPerTick:2},
+  acid:{minimumParts:100,maxHeight:1.6,riseSeconds:2,drainSeconds:2,duration:8,dissolveSeconds:.85,playerDamagePerSecond:.28},
   gore:{maxDrops:600,maxStains:180,maxWounds:96,woundSeconds:9},
   physics: { friction: 0.8, linearDamping: 0.35, angularDamping: 2.4, solverIterations: 8,
     npcLinearDamping:.12,npcAngularDamping:4.5,jointDamping:1.8,jointMaxTorque:2,solverSubsteps:2,
