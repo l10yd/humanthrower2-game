@@ -1,9 +1,9 @@
 # Новый контракт и план MVP: default chaos demo
 
-**Область:** `demo` + `twitch`, без вставания/охоты NPC.  
+**Область:** `demo` + `twitch`, без вставания/охоты NPC.<br>
 **Текущие правила рекордов:** `3.8-acid-pile-event`.
 
-**Последнее изменение пользователя:** остановить solver R&D, добавить видимое кислотное событие и опубликовать текущую демку. Кислота eligible при≥100physicsparts, предупреждение2с, rising/draining8с, maxheight1,6м; submerged debris растворяются без новых fragments, игрок повреждается. Это явное исключение сохранения частей — gameplay event, не hiddenperformanceculling. MVP gates всё ещё открыты.  
+**Последнее изменение пользователя:** остановить solver R&D, добавить видимое кислотное событие и опубликовать текущую демку. Кислота eligible при≥100physicsparts, предупреждение2с, rising/draining8с, maxheight1,6м; submerged debris растворяются без новых fragments, игрок повреждается. Это явное исключение сохранения частей — gameplay event, не hiddenperformanceculling. MVP gates всё ещё открыты.<br>
 **Статус:** MVP в работе, не принят. Блокирующие stability/device/performance gates не заменяются зелёным demo smoke.
 
 Этот документ — актуальный контракт для дальнейшей работы. `GDD.md`/`TDD.md` остаются источниками принципов и строгих технических проверок; их исторические runtime-значения не должны отменять описанный здесь default. Исходная ревизия: [DEMO_AUDIT.md](DEMO_AUDIT.md).
